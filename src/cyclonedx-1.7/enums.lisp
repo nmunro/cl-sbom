@@ -1,12 +1,19 @@
 (defpackage cl-sbom/cyclonedx-1.7/enums
   (:use :cl)
-  (:export #:component-type
+  (:export #:bom-format-type
+           #:component-type
            #:scope-type
            #:algorithm-type
            #:acknowledgement-type
-           #:encoding-type))
+           #:encoding-type
+           #:license-type
+           #:licence-id-type))
 
 (in-package :cl-sbom/cyclonedx-1.7/enums)
+
+(deftype bom-format-type ()
+  '(member
+    :CycloneDX))
 
 (deftype component-type ()
     '(member
@@ -33,6 +40,7 @@
 (deftype algorithm-type ()
   '(member
     :MD5
+    :SHA-1
     :SHA-256
     :SHA-384
     :SHA-512
