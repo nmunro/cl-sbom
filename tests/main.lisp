@@ -9,7 +9,62 @@
                 #:acknowledgement-type
                 #:encoding-type
                 #:license-type
-                #:licence-id-type))
+                #:licence-id-type)
+  (:import-from :cl-sbom/cyclonedx-1.7
+                #:sbom
+                #:sbom-metadata
+                #:tools
+                #:tool-components
+                #:tool-services
+                #:components
+                #:services
+                #:has-bom-ref
+                #:bom-ref
+                #:has-properties
+                #:properties
+                #:property
+                #:name
+                #:address
+                #:organizational-contact
+                #:organizational-entity
+                #:hash
+                #:alg
+                #:content
+                #:attachment
+                #:content-type
+                #:encoding
+                #:licensing
+                #:license
+                #:expression
+                #:license-expression
+                #:id
+                #:acknowledgement
+                #:acknowledge
+                #:component
+                #:version
+                #:author
+                #:authors
+                #:publisher
+                #:cpe
+                #:purl
+                #:timestamp
+                #:metadata
+                #:schema
+                #:bom-format
+                #:spec-version
+                #:serial-number
+                #:hashes
+                #:licenses
+                #:build-sbom
+                #:build-metadata
+                #:build-tools
+                #:build-component
+                #:build-property
+                #:build-hash
+                #:build-license
+                #:sbom-error
+                #:unsupported-bom-format
+                #:unsupported-spec-version))
 (in-package :cl-sbom/tests/main)
 
 ;; NOTE: To run this test file, execute `(asdf:test-system :cl-sbom)' in your Lisp.
@@ -57,6 +112,7 @@
 (deftest test-algorithm-type-enum
   (testing "valid algorithm-type values"
     (let ((valid-algorithms '(:MD5
+                             :SHA-1
                              :SHA-256
                              :SHA-384
                              :SHA-512
@@ -971,3 +1027,222 @@
     (ok (not (typep "0BSD" 'licence-id-type)))
     (ok (not (typep '0BSD 'licence-id-type)))
     (ok (not (typep nil 'licence-id-type)))))
+
+(deftest test-property-model
+  (testing "property creation and accessors"
+    (let ((prop (make-instance 'property :name "sample-prop" :value "sample-value")))
+      (ok (typep prop 'property))
+      (ok (string= (name prop) "sample-prop"))
+      (ok (string= (cl-sbom/cyclonedx-1.7:value prop) "sample-value"))))
+
+  (testing "has-properties mixin on classes"
+    (let ((c (make-instance 'component :type :library :name "lib"))
+          (lic (make-instance 'license))
+          (lexpr (make-instance 'license-expression))
+          (meta (make-instance 'sbom-metadata)))
+      (ok (typep c 'has-properties))
+      (ok (typep lic 'has-properties))
+      (ok (typep lexpr 'has-properties))
+      (ok (typep meta 'has-properties))
+      (ok (equalp (properties c) #()))
+      (ok (equalp (properties lic) #()))
+      (ok (equalp (properties lexpr) #()))
+      (ok (equalp (properties meta) #())))))
+
+(deftest test-has-bom-ref-mixin
+  (testing "bom-ref accessors on deduplicated classes"
+    (let ((addr (make-instance 'address :bom-ref "ref-addr"))
+          (contact (make-instance 'organizational-contact :bom-ref "ref-contact"))
+          (entity (make-instance 'organizational-entity :bom-ref "ref-entity"))
+          (comp (make-instance 'component :type :application :name "app" :bom-ref "ref-comp"))
+          (lic (make-instance 'license :bom-ref "ref-lic"))
+          (lexpr (make-instance 'license-expression :bom-ref "ref-lexpr"))
+          (expr (make-instance 'expression :license-identifier "MIT" :bom-ref "ref-expr")))
+      (ok (typep addr 'has-bom-ref))
+      (ok (typep contact 'has-bom-ref))
+      (ok (typep entity 'has-bom-ref))
+      (ok (typep comp 'has-bom-ref))
+      (ok (typep lic 'has-bom-ref))
+      (ok (typep lexpr 'has-bom-ref))
+      (ok (typep expr 'has-bom-ref))
+      (ok (string= (bom-ref addr) "ref-addr"))
+      (ok (string= (bom-ref contact) "ref-contact"))
+      (ok (string= (bom-ref entity) "ref-entity"))
+      (ok (string= (bom-ref comp) "ref-comp"))
+      (ok (string= (bom-ref lic) "ref-lic"))
+      (ok (string= (bom-ref lexpr) "ref-lexpr"))
+      (ok (string= (bom-ref expr) "ref-expr")))))
+
+(deftest test-hash-and-attachment-models
+  (testing "hash creation and algorithms"
+    (let ((h (make-instance 'hash :alg :SHA-256 :content "abcdef")))
+      (ok (eq (alg h) :SHA-256))
+      (ok (string= (content h) "abcdef")))
+    (let ((h-sha1 (make-instance 'hash :alg :SHA-1 :content "123456")))
+      (ok (eq (alg h-sha1) :SHA-1))))
+
+  (testing "attachment creation"
+    (let ((att (make-instance 'attachment :content "license body text")))
+      (ok (string= (content-type att) "text/plain"))
+      (ok (null (encoding att)))
+      (ok (string= (content att) "license body text")))
+    (let ((att-b64 (make-instance 'attachment :content "YmFzZTY0" :encoding :base64)))
+      (ok (eq (encoding att-b64) :base64)))))
+
+(deftest test-license-and-expressions
+  (testing "license instance and acknowledge method"
+    (let ((lic (make-instance 'license
+                              :id :MIT
+                              :name "MIT License"
+                              :acknowledgement :declared)))
+      (ok (eq (id lic) :MIT))
+      (ok (string= (name lic) "MIT License"))
+      (ok (eq (acknowledgement lic) :declared))
+      (ok (eq (acknowledge lic) :declared))))
+
+  (testing "license-expression and acknowledge method"
+    (let ((lexpr (make-instance 'license-expression
+                                :expression "MIT OR Apache-2.0"
+                                :acknowledgement :concluded)))
+      (ok (string= (cl-sbom/cyclonedx-1.7:expression lexpr) "MIT OR Apache-2.0"))
+      (ok (eq (acknowledgement lexpr) :concluded))
+      (ok (eq (acknowledge lexpr) :concluded)))))
+
+(deftest test-tools-and-generic-accessors
+  (testing "tools object and generic accessors on tools, sbom-metadata, sbom, and nil"
+    (let* ((comp (make-instance 'component :type :application :name "syft" :version "1.52.0"))
+           (tool-obj (make-instance 'tools :components (vector comp)))
+           (meta (make-instance 'sbom-metadata :tools tool-obj))
+           (sbom-inst (make-instance 'sbom :metadata meta)))
+      ;; tool-components
+      (ok (= (length (tool-components tool-obj)) 1))
+      (ok (= (length (tool-components meta)) 1))
+      (ok (= (length (tool-components sbom-inst)) 1))
+      (ok (string= (name (aref (tool-components sbom-inst) 0)) "syft"))
+
+      ;; tool-services
+      (ok (equalp (tool-services tool-obj) #()))
+      (ok (equalp (tool-services meta) #()))
+      (ok (equalp (tool-services sbom-inst) #()))
+
+      ;; nil safety
+      (ok (equalp (tool-components nil) #()))
+      (ok (equalp (tool-services nil) #()))
+      (let ((empty-meta (make-instance 'sbom-metadata))
+            (empty-sbom (make-instance 'sbom)))
+        (ok (equalp (tool-components empty-meta) #()))
+        (ok (equalp (tool-services empty-meta) #()))
+        (ok (equalp (tool-components empty-sbom) #()))
+        (ok (equalp (tool-services empty-sbom) #()))))))
+
+(deftest test-parse-sbom-json-integration
+  (testing "parsing full sbom.json fixture"
+    (let* ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json"))
+           (sbom (cl-sbom:parse sbom-path)))
+      (ok (typep sbom 'sbom))
+      (ok (string= (schema sbom) "http://cyclonedx.org/schema/bom-1.7.schema.json"))
+      (ok (eq (bom-format sbom) :CycloneDX))
+      (ok (string= (spec-version sbom) "1.7"))
+      (ok (string= (serial-number sbom) "urn:uuid:574fba47-c836-413f-9f0d-444c117bad26"))
+      (ok (= (version sbom) 1))
+
+      ;; Metadata
+      (let ((meta (metadata sbom)))
+        (ok (typep meta 'sbom-metadata))
+        (ok (string= (timestamp meta) "2026-09-22T22:10:41+01:00"))
+        (ok (> (length (properties meta)) 0))
+
+        ;; Metadata component
+        (let ((root-comp (cl-sbom/cyclonedx-1.7:component meta)))
+          (ok (typep root-comp 'component))
+          (ok (string= (name root-comp) "dradis-app-prod"))
+          (ok (eq (component-type root-comp) :container))
+          (ok (string= (bom-ref root-comp) "6d3f2bf143208b05")))
+
+        ;; Tools via generic accessor
+        (let ((tools-vec (tool-components sbom)))
+          (ok (= (length tools-vec) 1))
+          (let ((syft (aref tools-vec 0)))
+            (ok (string= (name syft) "syft"))
+            (ok (string= (version syft) "1.52.0"))
+            (ok (string= (author syft) "anchore"))
+            (ok (eq (component-type syft) :application))))
+
+        (ok (equalp (tool-services sbom) #())))
+
+      ;; Components
+      (let ((comps (components sbom)))
+        (ok (= (length comps) 703))
+
+        ;; Component 0: apk-tools
+        (let ((c0 (aref comps 0)))
+          (ok (string= (name c0) "apk-tools"))
+          (ok (string= (version c0) "2.14.10-r14"))
+          (ok (eq (component-type c0) :library))
+          (ok (string= (publisher c0) "wolfi"))
+          (ok (string= (cpe c0) "cpe:2.3:a:apk-tools:apk-tools:2.14.10-r14:*:*:*:*:*:*:*"))
+          (ok (string= (purl c0) "pkg:apk/wolfi/apk-tools@2.14.10-r14?arch=aarch64&distro=wolfi-20230201"))
+          (ok (> (length (properties c0)) 0))
+          (ok (= (length (licenses c0)) 1))
+          (let ((lic (aref (licenses c0) 0)))
+            (ok (typep lic 'license))
+            (ok (eq (id lic) :GPL-2.0-only))))
+
+        ;; Component with license expression: ca-certificates
+        (let ((ca-cert (find "ca-certificates" comps :key #'name :test #'string=)))
+          (ok (not (null ca-cert)))
+          (ok (= (length (licenses ca-cert)) 1))
+          (let ((lexpr (aref (licenses ca-cert) 0)))
+            (ok (typep lexpr 'license-expression))
+            (ok (string= (cl-sbom/cyclonedx-1.7:expression lexpr) "MPL-2.0 AND MIT"))))
+
+        ;; Component with hashes: /etc/ssl/ca.cnf
+        (let ((ca-cnf (find "/etc/ssl/ca.cnf" comps :key #'name :test #'string=)))
+          (ok (not (null ca-cnf)))
+          (let ((h-vec (hashes ca-cnf)))
+            (ok (= (length h-vec) 2))
+            (ok (eq (alg (aref h-vec 0)) :SHA-1))
+            (ok (string= (content (aref h-vec 0)) "505fe275888ebe08b0f1c474bd395d84217bf4c8"))
+            (ok (eq (alg (aref h-vec 1)) :SHA-256))
+            (ok (string= (content (aref h-vec 1)) "5b6e66467de39cf6f108c55674ae90be274bde59e33cf5b5fe1313bbc5794c97"))))))))
+
+(deftest test-build-sbom-validation
+  (testing "invalid or missing bomFormat signals unsupported-bom-format"
+    (let ((ht (make-hash-table :test 'equal)))
+      (setf (gethash "specVersion" ht) "1.7")
+      ;; Missing bomFormat
+      (ok (signals (build-sbom ht) 'unsupported-bom-format))
+      (ok (signals (build-sbom ht) 'sbom-error))
+      ;; Invalid bomFormat
+      (setf (gethash "bomFormat" ht) "SPDX")
+      (ok (signals (build-sbom ht) 'unsupported-bom-format))
+      (handler-case (build-sbom ht)
+        (unsupported-bom-format (c)
+          (ok (string= (bom-format c) "SPDX"))))
+      (setf (gethash "bomFormat" ht) 123)
+      (ok (signals (build-sbom ht) 'unsupported-bom-format))))
+
+  (testing "invalid or missing specVersion signals unsupported-spec-version"
+    (let ((ht (make-hash-table :test 'equal)))
+      (setf (gethash "bomFormat" ht) "CycloneDX")
+      ;; Missing specVersion
+      (ok (signals (build-sbom ht) 'unsupported-spec-version))
+      (ok (signals (build-sbom ht) 'sbom-error))
+      ;; Invalid specVersion
+      (setf (gethash "specVersion" ht) "1.6")
+      (ok (signals (build-sbom ht) 'unsupported-spec-version))
+      (handler-case (build-sbom ht)
+        (unsupported-spec-version (c)
+          (ok (string= (spec-version c) "1.6"))))
+      (setf (gethash "specVersion" ht) "2.0")
+      (ok (signals (build-sbom ht) 'unsupported-spec-version))))
+
+  (testing "valid bomFormat and specVersion succeeds"
+    (let ((ht (make-hash-table :test 'equal)))
+      (setf (gethash "bomFormat" ht) "CycloneDX")
+      (setf (gethash "specVersion" ht) "1.7")
+      (let ((res (build-sbom ht)))
+        (ok (typep res 'sbom))
+        (ok (eq (bom-format res) :CycloneDX))
+        (ok (string= (spec-version res) "1.7"))))))
+

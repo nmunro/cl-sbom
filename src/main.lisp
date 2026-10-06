@@ -2,8 +2,14 @@
   (:use :cl)
   (:import-from :cl-sbom/cyclonedx-1.7
                 #:build-sbom
-                #:build-metadata)
-  (:export #:parse))
+                #:build-metadata
+                #:sbom-error
+                #:unsupported-bom-format
+                #:unsupported-spec-version)
+  (:export #:parse
+           #:sbom-error
+           #:unsupported-bom-format
+           #:unsupported-spec-version))
 
 (in-package :cl-sbom)
 
