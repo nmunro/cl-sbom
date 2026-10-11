@@ -7,6 +7,10 @@
            #:find-component
            #:dependencies-of
            #:dependents-of
+           #:relationships-of
+           #:root-p
+           #:leaf-p
+           #:isolated-p
            #:acknowledge
            #:acknowledgement
            #:acknowledgement-type
