@@ -3,6 +3,8 @@
         :cl-sbom/cyclonedx-1.7
         :cl-sbom/cyclonedx-1.7/enums)
   (:export #:parse
+           #:all-components
+           #:find-component
            #:acknowledge
            #:acknowledgement
            #:acknowledgement-type
@@ -192,17 +194,7 @@
       (otherwise
        (error 'unsupported-bom-format :format format)))))
 
-(let ((data (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
-  (loop :for comp :across (components data)
-        :do (format t "~A~%" comp)))
-
-(let ((data (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
-  (let ((tmp (aref (components data) 0)))
-    (princ tmp)))
-
-
-(let ((data (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
-  ;; (loop :for comp :across (dependencies data)
-  ;;       :do (format t "~A~%" comp))
-  (format t "~A~%" (aref (dependencies data) 0))
-  (depends-on (aref (dependencies data) 0)))
+(let ((sbom (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
+  (multiple-value-bind (res others count)
+        (find-component sbom "pkg:apk/wolfi/apk-tools" :test #'search)
+      res))

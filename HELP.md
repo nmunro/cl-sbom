@@ -204,8 +204,30 @@ Because `cl-sbom` avoids name conflicts with `COMMON-LISP`, downstream packages 
   - [`unsupported-bom-format`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L186-L191) if `:format` is not `:cyclonedx-1.7`/`:cyclonedx`, or if the document's `"bomFormat"` is not `"CycloneDX"`.
   - [`unsupported-spec-version`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L193-L198) if the document's `"specVersion"` is not `"1.7"`.
 
+#### `(find-component sbom target &key (key #'bom-ref) (test #'string=))`
+* **File:** [src/cyclonedx-1.7/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L547-L568)
+* **Arguments:**
+  - `sbom`: An instance of [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399).
+  - `target`: The search value to match against (e.g. a `bom-ref` string, package name, or PURL).
+  - `:key`: Function designator extracting the comparison value from each component (defaults to `#'bom-ref`).
+  - `:test`: Equality/comparison function designator (defaults to `#'string=`).
+* **Returns:** Multiple values `(values primary-match remaining-matches total-count)`:
+  1. `primary-match`: The first matching [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304) instance, or `nil` if not found.
+  2. `remaining-matches`: A list of any additional matching [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304) instances, or `nil` if unique or no match.
+  3. `total-count`: Integer total count of matching components.
+* **Performance:**
+  - When querying by `bom-ref` (the default `:key #'bom-ref` with `:test #'string=`), lookups use a cached hash-table index for $O(1)$ fast retrieval.
+  - When querying with arbitrary keys or tests, it searches across all components in the document (including root metadata components, tool components, and nested subcomponents).
+
+#### `(all-components sbom)`
+* **File:** [src/cyclonedx-1.7/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L510-L536)
+* **Arguments:**
+  - `sbom`: An instance of [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399).
+* **Returns:** A flat list of all [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304) instances present in the SBOM document, traversing root metadata components, tool components, top-level components, and all recursively nested subcomponents.
+
 ### Re-exported Symbols
 The package [`cl-sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L1-L200) re-exports:
+* **Core Functions:** [`parse`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L182-L194), [`find-component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L547-L568), [`all-components`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L510-L536).
 * **All Models:** [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399), [`sbom-metadata`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L379-L386), [`tools`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L375-L377), [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L311-L323), [`dependency`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L306-L309), [`external-reference`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L277-L281), [`vulnerability`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L357-L373), and sub-models ([`vulnerability-source`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L325-L327), [`vulnerability-rating`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L333-L339), etc.).
 * **All Accessors & Mixins:** [`components`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L395), [`dependencies`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L398), [`vulnerabilities`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L399), [`services`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L396), [`metadata`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L394), [`name`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L292), [`version`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L293), [`purl`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L302), [`bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L202), [`properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L205), [`tool-components`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L401-L435), [`tool-services`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L404-L437), [`acknowledge`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L268-L275).
 * **All Conditions:** [`sbom-error`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L182-L184), [`unsupported-bom-format`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L186-L191), [`unsupported-spec-version`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L193-L198).
@@ -542,17 +564,27 @@ The [`enums.lisp`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.
 
 ## Recipes & Common Tasks
 
-### Searching Components by Name or PURL
+### Searching Components by Name, PURL, or BOM-Ref
+
+Use `find-component` to search across all components in the document (including root metadata, tool components, and nested subcomponents).
 
 ```lisp
-(defun find-component-by-purl (sbom target-purl)
-  (find target-purl (cl-sbom:components sbom)
-        :key #'cl-sbom:purl
-        :test #'string=))
+;; 1. Fast O(1) lookup by unique bom-ref (the default):
+(let ((comp (cl-sbom:find-component sbom "pkg:apk/wolfi/apk-tools@2.14.10-r14...")))
+  (when comp
+    (format t "Found: ~A~%" comp)))
 
-(defun find-components-by-type (sbom ctype)
-  (remove-if-not (lambda (c) (eq (cl-sbom:component-type c) ctype))
-                 (cl-sbom:components sbom)))
+;; 2. Search by package name:
+(let ((comp (cl-sbom:find-component sbom "apk-tools" :key #'cl-sbom:name)))
+  (when comp
+    (describe comp)))
+
+;; 3. Check for multiple copies or ambiguity using multiple return values:
+(multiple-value-bind (primary others total)
+    (cl-sbom:find-component sbom "openssl" :key #'cl-sbom:name :test #'search)
+  (if primary
+      (format t "Found ~D matches! Primary: ~A, Others: ~A~%" total primary others)
+      (format t "No matches found.~%")))
 ```
 
 ### Traversing the Dependency Graph

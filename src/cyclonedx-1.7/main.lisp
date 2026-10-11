@@ -16,7 +16,9 @@
                 #:score-method-type
                 #:impact-analysis-state
                 #:impact-analysis-justification)
-  (:export #:build-sbom
+  (:export #:all-components
+           #:find-component
+           #:build-sbom
            #:build-metadata
            #:build-tools
            #:build-component
@@ -396,7 +398,8 @@
    (services :initarg :services :initform #() :accessor services :type (vector service))
    (external-references :initarg :external-references :initform #() :accessor external-references :type (vector external-reference))
    (dependencies :initarg :dependencies :initform #() :accessor dependencies :type (vector dependency))
-   (vulnerabilities :initarg :vulnerabilities :initform #() :accessor vulnerabilities :type (vector vulnerability))))
+   (vulnerabilities :initarg :vulnerabilities :initform #() :accessor vulnerabilities :type (vector vulnerability))
+   (%component-index :initform nil :accessor %component-index)))
 
 (defgeneric tool-components (object)
   (:documentation "Returns the vector of tool components from OBJECT (TOOLS, SBOM-METADATA, or SBOM)."))
@@ -445,6 +448,17 @@
             (serial-number obj)
             (version obj))))
 
+(defmethod describe-object ((obj sbom) stream)
+  (format stream "~&CycloneDX SBOM (~A v~A)~%" (bom-format obj) (spec-version obj))
+  (format stream "  Serial Number:   ~A~%" (serial-number obj))
+  (format stream "  Version:         ~D~%" (version obj))
+  (when (metadata obj)
+    (format stream "  Timestamp:       ~A~%" (timestamp (metadata obj))))
+  (format stream "  Components:      ~D~%" (length (components obj)))
+  (format stream "  Dependencies:    ~D entries~%" (length (dependencies obj)))
+  (format stream "  Services:        ~D~%" (length (services obj)))
+  (format stream "  Vulnerabilities: ~D~%" (length (vulnerabilities obj))))
+
 (defmethod print-object ((obj component) stream)
   (print-unreadable-object (obj stream :type t :identity nil)
     (let ((name (if (slot-boundp obj 'name) (name obj) ""))
@@ -454,12 +468,112 @@
           (format stream "Name: ~A, Version: ~A, Type: ~A" name ver type)
           (format stream "Name: ~A, Type: ~A" name type)))))
 
+(defmethod describe-object ((obj component) stream)
+  (format stream "~&Component: ~A~@[@~A~] (~A)~%"
+          (name obj)
+          (when (plusp (length (version obj))) (version obj))
+          (component-type obj))
+  (when (plusp (length (group obj)))
+    (format stream "  Group:       ~A~%" (group obj)))
+
+  (when (plusp (length (bom-ref obj)))
+    (format stream "  BOM-Ref:     ~A~%" (bom-ref obj)))
+
+  (when (plusp (length (purl obj)))
+    (format stream "  PURL:        ~A~%" (purl obj)))
+
+  (when (plusp (length (cpe obj)))
+    (format stream "  CPE:         ~A~%" (cpe obj)))
+
+  (when (scope obj)
+    (format stream "  Scope:       ~A~%" (scope obj)))
+
+  (when (plusp (length (description obj)))
+    (format stream "  Description: ~A~%" (description obj)))
+
+  (when (plusp (length (licenses obj)))
+    (format stream "  Licenses:    ~{~A~^, ~}~%"
+            (map 'list (lambda (lic)
+                         (cond
+                           ((typep lic 'license)
+                            (or (id lic) (name lic) "unknown"))
+                           ((typep lic 'license-expression)
+                            (expression lic))
+                           (t "unknown")))
+                 (licenses obj))))
+
+  (when (plusp (length (components obj)))
+    (format stream "  Subcomponents: ~D~%" (length (components obj))))
+
+  (when (plusp (length (properties obj)))
+    (format stream "  Properties:  ~D~%" (length (properties obj)))))
+
 (defmethod print-object ((obj dependency) stream)
   (print-unreadable-object (obj stream :type t :identity nil)
     (format stream "Ref: ~A, Depends-On: ~D, Provides: ~D"
             (if (slot-boundp obj 'ref) (ref obj) "")
             (if (slot-boundp obj 'depends-on) (length (depends-on obj)) 0)
             (if (slot-boundp obj 'provides) (length (provides obj)) 0))))
+
+(defun all-components (sbom)
+  "Returns a flat list of all components in SBOM, including root metadata component, tool components, and recursively nested sub-components."
+  (let ((result nil)
+        (visited (make-hash-table :test 'eq)))
+    (labels ((collect (comp)
+               (when (and comp (not (gethash comp visited)))
+                 (setf (gethash comp visited) t)
+                 (push comp result)
+                 (when (and (slot-boundp comp 'components)
+                            (plusp (length (components comp))))
+                   (loop for sub across (components comp)
+                         do (collect sub))))))
+      ;; 1. Root component in metadata
+      (let ((meta (metadata sbom)))
+        (when meta
+          (when (and (slot-boundp meta 'component) (component meta))
+            (collect (component meta)))
+          (when (and (slot-boundp meta 'tools) (tools meta))
+            (let ((t-inst (tools meta)))
+              (when (slot-boundp t-inst 'components)
+                (loop for tc across (components t-inst)
+                      do (collect tc)))))))
+      ;; 2. Top-level components and nested sub-components
+      (when (slot-boundp sbom 'components)
+        (loop for c across (components sbom)
+              do (collect c))))
+    (nreverse result)))
+
+(defun ensure-component-index (sbom)
+  "Ensures and returns the cached hash table mapping bom-ref to component for SBOM."
+  (or (%component-index sbom)
+      (let ((table (make-hash-table :test 'equal)))
+        (dolist (c (all-components sbom))
+          (when (and (slot-boundp c 'bom-ref)
+                     (plusp (length (bom-ref c))))
+            (setf (gethash (bom-ref c) table) c)))
+        (setf (%component-index sbom) table))))
+
+(defun find-component (sbom target &key (key #'bom-ref) (test #'string=))
+  "Finds components in SBOM matching TARGET according to KEY and TEST.
+Returns:
+  1. The primary (first) matching COMPONENT, or NIL if none found.
+  2. A list of any additional matching COMPONENT instances (or NIL if unique/none).
+  3. The total count of matching components."
+  (if (and (eq key #'bom-ref) (eq test #'string=))
+      (let* ((index (ensure-component-index sbom))
+             (match (gethash target index)))
+        (if match
+            (values match nil 1)
+            (values nil nil 0)))
+      (let ((matches nil))
+        (dolist (comp (all-components sbom))
+          (let ((val (funcall key comp)))
+            (when (funcall test target val)
+              (push comp matches))))
+        (let ((ordered (nreverse matches)))
+          (if ordered
+              (values (first ordered) (rest ordered) (length ordered))
+              (values nil nil 0))))))
 
 (defun to-keyword (str)
   (when str

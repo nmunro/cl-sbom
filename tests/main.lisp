@@ -1213,28 +1213,28 @@
       (ok (string= (schema sbom) "http://cyclonedx.org/schema/bom-1.7.schema.json"))
       (ok (eq (bom-format sbom) :CycloneDX))
       (ok (string= (spec-version sbom) "1.7"))
-      (ok (string= (serial-number sbom) "urn:uuid:574fba47-c836-413f-9f0d-444c117bad26"))
+      (ok (string= (serial-number sbom) "urn:uuid:8377c553-e2d9-4f1f-9014-46f5ded34187"))
       (ok (= (version sbom) 1))
 
       ;; Metadata
       (let ((meta (metadata sbom)))
         (ok (typep meta 'sbom-metadata))
-        (ok (string= (timestamp meta) "2026-09-22T22:10:41+01:00"))
+        (ok (string= (timestamp meta) "2026-10-10T15:22:24+01:00"))
         (ok (> (length (properties meta)) 0))
 
         ;; Metadata component
         (let ((root-comp (cl-sbom/cyclonedx-1.7:component meta)))
           (ok (typep root-comp 'component))
-          (ok (string= (name root-comp) "dradis-app-prod"))
+          (ok (string= (name root-comp) "dradis-app"))
           (ok (eq (component-type root-comp) :container))
-          (ok (string= (bom-ref root-comp) "6d3f2bf143208b05")))
+          (ok (string= (bom-ref root-comp) "61289ac238cf2a58")))
 
         ;; Tools via generic accessor
         (let ((tools-vec (tool-components sbom)))
           (ok (= (length tools-vec) 1))
           (let ((syft (aref tools-vec 0)))
             (ok (string= (name syft) "syft"))
-            (ok (string= (version syft) "1.52.0"))
+            (ok (string= (version syft) "1.54.0"))
             (ok (string= (author syft) "anchore"))
             (ok (eq (component-type syft) :application))))
 
@@ -1242,16 +1242,16 @@
 
       ;; Components
       (let ((comps (components sbom)))
-        (ok (= (length comps) 703))
+        (ok (= (length comps) 4445))
 
         ;; Component 0: apk-tools
         (let ((c0 (aref comps 0)))
           (ok (string= (name c0) "apk-tools"))
-          (ok (string= (version c0) "2.14.10-r14"))
+          (ok (string= (version c0) "2.14.10-r16"))
           (ok (eq (component-type c0) :library))
           (ok (string= (publisher c0) "wolfi"))
-          (ok (string= (cpe c0) "cpe:2.3:a:apk-tools:apk-tools:2.14.10-r14:*:*:*:*:*:*:*"))
-          (ok (string= (purl c0) "pkg:apk/wolfi/apk-tools@2.14.10-r14?arch=aarch64&distro=wolfi-20230201"))
+          (ok (string= (cpe c0) "cpe:2.3:a:apk-tools:apk-tools:2.14.10-r16:*:*:*:*:*:*:*"))
+          (ok (string= (purl c0) "pkg:apk/wolfi/apk-tools@2.14.10-r16?arch=aarch64&distro=wolfi-20230201"))
           (ok (> (length (properties c0)) 0))
           (ok (= (length (licenses c0)) 1))
           (let ((lic (aref (licenses c0) 0)))
@@ -1290,12 +1290,12 @@
 
       ;; Dependencies
       (let ((deps (dependencies sbom)))
-        (ok (= (length deps) 38))
+        (ok (= (length deps) 61))
         (let ((dep0 (aref deps 0)))
           (ok (typep dep0 'dependency))
-          (ok (string= (ref dep0) "pkg:apk/wolfi/apk-tools@2.14.10-r14?arch=aarch64&distro=wolfi-20230201&package-id=570ada9049c7c2f3"))
+          (ok (string= (ref dep0) "pkg:apk/wolfi/apk-tools@2.14.10-r16?arch=aarch64&distro=wolfi-20230201&package-id=bb8200af5ed698a3"))
           (ok (= (length (depends-on dep0)) 7))
-          (ok (string= (aref (depends-on dep0) 0) "pkg:apk/wolfi/ca-certificates-bundle@20260611-r1?arch=aarch64&distro=wolfi-20230201&package-id=34cb2abdbe4a5361&upstream=ca-certificates"))
+          (ok (string= (aref (depends-on dep0) 0) "pkg:apk/wolfi/ca-certificates-bundle@20260909-r1?arch=aarch64&distro=wolfi-20230201&package-id=dd3b0202d2da07d9&upstream=ca-certificates"))
           (ok (equalp (provides dep0) #()))))
 
       ;; Top-level collections
@@ -1659,8 +1659,8 @@
       (ok (typep sbom-3 'cl-sbom:sbom))
       (ok (eq (cl-sbom:bom-format sbom-1) :CycloneDX))
       (ok (string= (cl-sbom:spec-version sbom-1) "1.7"))
-      (ok (= (length (cl-sbom:components sbom-1)) 703))
-      (ok (= (length (cl-sbom:dependencies sbom-1)) 38))
+      (ok (= (length (cl-sbom:components sbom-1)) 4445))
+      (ok (= (length (cl-sbom:dependencies sbom-1)) 61))
       (ok (equalp (cl-sbom:services sbom-1) #()))
       (ok (equalp (cl-sbom:vulnerabilities sbom-1) #()))
       (ok (equalp (cl-sbom:external-references sbom-1) #()))
@@ -1668,24 +1668,35 @@
       ;; Test direct accessors from cl-sbom without reaching into subpackages
       (let ((c0 (aref (cl-sbom:components sbom-1) 0)))
         (ok (string= (cl-sbom:name c0) "apk-tools"))
-        (ok (string= (cl-sbom:version c0) "2.14.10-r14"))
+        (ok (string= (cl-sbom:version c0) "2.14.10-r16"))
         (ok (eq (cl-sbom:component-type c0) :library))
-        (ok (string= (cl-sbom:purl c0) "pkg:apk/wolfi/apk-tools@2.14.10-r14?arch=aarch64&distro=wolfi-20230201"))
+        (ok (string= (cl-sbom:purl c0) "pkg:apk/wolfi/apk-tools@2.14.10-r16?arch=aarch64&distro=wolfi-20230201"))
         (ok (= (length (cl-sbom:licenses c0)) 1)))
 
       (let ((meta (cl-sbom:metadata sbom-1)))
         (ok (typep meta 'cl-sbom:sbom-metadata))
-        (ok (string= (cl-sbom:timestamp meta) "2026-09-22T22:10:41+01:00"))
+        (ok (string= (cl-sbom:timestamp meta) "2026-10-10T15:22:24+01:00"))
         (ok (= (length (cl-sbom:tool-components sbom-1)) 1))
         (ok (equalp (cl-sbom:tool-services sbom-1) #())))
 
-      ;; Test component print-object displays name, version, and type without memory identity
+      ;; Test component print-object and describe-object
       (let* ((c0 (aref (cl-sbom:components sbom-1) 0))
-             (str (format nil "~A" c0)))
+             (str (format nil "~A" c0))
+             (c-desc (with-output-to-string (s) (describe c0 s))))
         (ok (search "Name: apk-tools" str))
-        (ok (search "Version: 2.14.10-r14" str))
+        (ok (search "Version: 2.14.10-r16" str))
         (ok (search "Type: LIBRARY" str))
-        (ok (not (search "{" str))))))
+        (ok (not (search "{" str)))
+        (ok (search "Component: apk-tools@2.14.10-r16 (LIBRARY)" c-desc))
+        (ok (search "BOM-Ref:" c-desc))
+        (ok (search "PURL:" c-desc))
+        (ok (search "Licenses:" c-desc)))
+
+      ;; Test describe-object on sbom
+      (let ((desc (with-output-to-string (s) (describe sbom-1 s))))
+        (ok (search "CycloneDX SBOM" desc))
+        (ok (search "Components:      4445" desc))
+        (ok (search "Dependencies:    61 entries" desc)))))
 
   (testing "component print-object includes name and type without identity"
     (let* ((comp (make-instance 'cl-sbom:component :name "my-lib" :version "1.0.0" :type :library))
@@ -1703,5 +1714,73 @@
       (handler-case (cl-sbom:parse sbom-path :format :spdx)
         (cl-sbom:unsupported-bom-format (c)
           (ok (eq (cl-sbom:bom-format c) :spdx)))))))
+
+(deftest test-find-component
+  (testing "finding components in sbom by bom-ref, name, and purl"
+    (let* ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json"))
+           (sbom (cl-sbom:parse sbom-path)))
+      ;; all-components includes 4445 top-level + 1 metadata root component + 1 tool component
+      (ok (= (length (cl-sbom:all-components sbom)) 4447))
+
+      ;; Lookup by bom-ref (default key)
+      (multiple-value-bind (match others count)
+          (cl-sbom:find-component sbom "pkg:apk/wolfi/apk-tools@2.14.10-r16?arch=aarch64&distro=wolfi-20230201&package-id=bb8200af5ed698a3")
+        (ok (typep match 'cl-sbom:component))
+        (ok (string= (cl-sbom:name match) "apk-tools"))
+        (ok (null others))
+        (ok (= count 1)))
+
+      ;; Lookup non-existent bom-ref
+      (multiple-value-bind (match others count)
+          (cl-sbom:find-component sbom "non-existent-ref")
+        (ok (null match))
+        (ok (null others))
+        (ok (= count 0)))
+
+      ;; Lookup by name
+      (multiple-value-bind (match others count)
+          (cl-sbom:find-component sbom "apk-tools" :key #'cl-sbom:name)
+        (ok (typep match 'cl-sbom:component))
+        (ok (string= (cl-sbom:name match) "apk-tools"))
+        (ok (null others))
+        (ok (= count 1)))
+
+      ;; Lookup metadata root component by bom-ref
+      (multiple-value-bind (match others count)
+          (cl-sbom:find-component sbom "61289ac238cf2a58")
+        (ok (typep match 'cl-sbom:component))
+        (ok (string= (cl-sbom:name match) "dradis-app"))
+        (ok (eq (cl-sbom:component-type match) :container))
+        (ok (= count 1)))))
+
+  (testing "multiple return values when multiple components match"
+    (let* ((c1 (make-instance 'cl-sbom:component :name "shared-lib" :version "1.0.0" :type :library))
+           (c2 (make-instance 'cl-sbom:component :name "shared-lib" :version "2.0.0" :type :library))
+           (c3 (make-instance 'cl-sbom:component :name "other-lib" :version "0.5.0" :type :library))
+           (dummy-sbom (make-instance 'cl-sbom:sbom :components (vector c1 c2 c3))))
+      (setf (cl-sbom:bom-ref c1) "ref-1")
+      (setf (cl-sbom:bom-ref c2) "ref-2")
+      (setf (cl-sbom:bom-ref c3) "ref-3")
+
+      ;; Multiple matches on name
+      (multiple-value-bind (first others total)
+          (cl-sbom:find-component dummy-sbom "shared-lib" :key #'cl-sbom:name)
+        (ok (eq first c1))
+        (ok (equal others (list c2)))
+        (ok (= total 2)))
+
+      ;; Substring search matching all 3
+      (multiple-value-bind (first others total)
+          (cl-sbom:find-component dummy-sbom "lib" :key #'cl-sbom:name :test #'search)
+        (ok (eq first c1))
+        (ok (equal others (list c2 c3)))
+        (ok (= total 3)))
+
+      ;; Single match by bom-ref
+      (multiple-value-bind (first others total)
+          (cl-sbom:find-component dummy-sbom "ref-2")
+        (ok (eq first c2))
+        (ok (null others))
+        (ok (= total 1))))))
 
 
