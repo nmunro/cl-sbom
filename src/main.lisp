@@ -1,18 +1,208 @@
 (defpackage cl-sbom
-  (:use :cl)
-  (:import-from :cl-sbom/cyclonedx-1.7
-                #:build-sbom
-                #:build-metadata
-                #:sbom-error
-                #:unsupported-bom-format
-                #:unsupported-spec-version)
+  (:use :cl
+        :cl-sbom/cyclonedx-1.7
+        :cl-sbom/cyclonedx-1.7/enums)
   (:export #:parse
+           #:acknowledge
+           #:acknowledgement
+           #:acknowledgement-type
+           #:address
+           #:advisories
+           #:affects
+           #:alg
+           #:algorithm-type
+           #:alt-ids
+           #:analysis
+           #:attachment
+           #:authenticated
+           #:author
+           #:authors
+           #:bom-format
+           #:bom-format-type
+           #:bom-ref
+           #:build-address
+           #:build-attachment
+           #:build-component
+           #:build-components
+           #:build-contact
+           #:build-contacts
+           #:build-dependencies
+           #:build-dependency
+           #:build-entity
+           #:build-expression
+           #:build-external-reference
+           #:build-external-references
+           #:build-hash
+           #:build-hashes
+           #:build-license
+           #:build-licenses
+           #:build-licensing
+           #:build-metadata
+           #:build-properties
+           #:build-property
+           #:build-sbom
+           #:build-service
+           #:build-services
+           #:build-tools
+           #:build-vulnerabilities
+           #:build-vulnerability
+           #:build-vulnerability-advisory
+           #:build-vulnerability-analysis
+           #:build-vulnerability-rating
+           #:build-vulnerability-reference
+           #:build-vulnerability-source
+           #:build-vulnerability-target
+           #:comment
+           #:component
+           #:component-type
+           #:components
+           #:contact
+           #:content
+           #:content-type
+           #:copyright
+           #:country
+           #:cpe
+           #:created
+           #:cwes
+           #:dependencies
+           #:dependency
+           #:depends-on
+           #:description
+           #:detail
+           #:email
+           #:encoding
+           #:encoding-type
+           #:endpoints
+           #:expiration
+           #:expression
+           #:expression-details
+           #:external-reference
+           #:external-reference-type
+           #:external-references
+           #:first-issued
+           #:group
+           #:has-bom-ref
+           #:has-properties
+           #:hash
+           #:hashes
+           #:id
+           #:impact-analysis-justification
+           #:impact-analysis-state
+           #:is-external
+           #:justification
+           #:last-renewal
+           #:last-updated
+           #:licence-id-type
+           #:license
+           #:license-expression
+           #:license-identifier
+           #:license-type
+           #:license-types
+           #:licensee
+           #:licenses
+           #:licensing
+           #:licensor
+           #:locality
+           #:manufacturer
+           #:metadata
+           #:mime-type
+           #:name
+           #:organizational-contact
+           #:organizational-entity
+           #:phone
+           #:post-office-box-number
+           #:postal-code
+           #:properties
+           #:property
+           #:provider
+           #:provides
+           #:published
+           #:publisher
+           #:purchase-order
+           #:purchaser
+           #:purl
+           #:ratings
+           #:recommendation
+           #:ref
+           #:reference-type
+           #:references
+           #:region
+           #:rejected
+           #:response
+           #:sbom
            #:sbom-error
+           #:sbom-metadata
+           #:schema
+           #:scope
+           #:scope-type
+           #:score
+           #:score-method
+           #:score-method-type
+           #:score-vector
+           #:serial-number
+           #:service
+           #:services
+           #:severity
+           #:severity-type
+           #:source
+           #:spec-version
+           #:state
+           #:street-address
+           #:supplier
+           #:text
+           #:timestamp
+           #:title
+           #:tool-components
+           #:tool-services
+           #:tools
+           #:trust-zone
            #:unsupported-bom-format
-           #:unsupported-spec-version))
+           #:unsupported-spec-version
+           #:updated
+           #:url
+           #:value
+           #:version
+           #:version-range
+           #:versions
+           #:vulnerabilities
+           #:vulnerability
+           #:vulnerability-advisory
+           #:vulnerability-analysis
+           #:vulnerability-rating
+           #:vulnerability-reference
+           #:vulnerability-source
+           #:vulnerability-target
+           #:workaround
+           #:x-trust-boundary))
 
 (in-package :cl-sbom)
 
-(defun parse (path)
-  (let ((data (com.inuoe.jzon:parse (uiop:read-file-string path))))
-    (build-sbom data)))
+(defun parse (path &key (format :cyclonedx-1.7))
+  "Parse an SBOM file, pathname, string, or open stream according to FORMAT (defaults to :CYCLONEDX-1.7)."
+  (let ((fmt-kw (if (symbolp format)
+                    format
+                    (alexandria:make-keyword (string-upcase format)))))
+    (case fmt-kw
+      ((:cyclonedx-1.7 :cyclonedx)
+       (let ((data (if (streamp path)
+                       (com.inuoe.jzon:parse path)
+                       (com.inuoe.jzon:parse (uiop:read-file-string path)))))
+         (build-sbom data)))
+
+      (otherwise
+       (error 'unsupported-bom-format :format format)))))
+
+(let ((data (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
+  (loop :for comp :across (components data)
+        :do (format t "~A~%" comp)))
+
+(let ((data (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
+  (let ((tmp (aref (components data) 0)))
+    (princ tmp)))
+
+
+(let ((data (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
+  ;; (loop :for comp :across (dependencies data)
+  ;;       :do (format t "~A~%" comp))
+  (format t "~A~%" (aref (dependencies data) 0))
+  (depends-on (aref (dependencies data) 0)))

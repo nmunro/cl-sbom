@@ -10,7 +10,12 @@
                 #:acknowledgement-type
                 #:encoding-type
                 #:license-type
-                #:licence-id-type)
+                #:licence-id-type
+                #:external-reference-type
+                #:severity-type
+                #:score-method-type
+                #:impact-analysis-state
+                #:impact-analysis-justification)
   (:export #:build-sbom
            #:build-metadata
            #:build-tools
@@ -29,6 +34,20 @@
            #:build-license
            #:build-licenses
            #:build-expression
+           #:build-external-reference
+           #:build-external-references
+           #:build-dependency
+           #:build-dependencies
+           #:build-service
+           #:build-services
+           #:build-vulnerability
+           #:build-vulnerabilities
+           #:build-vulnerability-source
+           #:build-vulnerability-reference
+           #:build-vulnerability-rating
+           #:build-vulnerability-advisory
+           #:build-vulnerability-analysis
+           #:build-vulnerability-target
            #:sbom
            #:sbom-metadata
            #:tools
@@ -50,7 +69,18 @@
            #:license
            #:expression
            #:license-expression
+           #:acknowledge
            #:component
+           #:external-reference
+           #:dependency
+           #:service
+           #:vulnerability
+           #:vulnerability-source
+           #:vulnerability-reference
+           #:vulnerability-rating
+           #:vulnerability-advisory
+           #:vulnerability-analysis
+           #:vulnerability-target
            #:schema
            #:bom-format
            #:spec-version
@@ -71,7 +101,6 @@
            #:copyright
            #:cpe
            #:purl
-           #:component
            #:manufacturer
            #:supplier
            #:licenses
@@ -105,6 +134,44 @@
            #:license-identifier
            #:component-type
            #:mime-type
+           #:external-references
+           #:dependencies
+           #:vulnerabilities
+           #:reference-type
+           #:comment
+           #:ref
+           #:depends-on
+           #:provides
+           #:provider
+           #:endpoints
+           #:authenticated
+           #:x-trust-boundary
+           #:trust-zone
+           #:score
+           #:severity
+           #:score-method
+           #:score-vector
+           #:justification
+           #:title
+           #:state
+           #:response
+           #:detail
+           #:first-issued
+           #:last-updated
+           #:created
+           #:published
+           #:updated
+           #:rejected
+           #:recommendation
+           #:workaround
+           #:cwes
+           #:ratings
+           #:advisories
+           #:analysis
+           #:affects
+           #:references
+           #:versions
+           #:source
            #:sbom-error
            #:unsupported-bom-format
            #:unsupported-spec-version))
@@ -207,6 +274,12 @@
 (defmethod acknowledge ((expr license-expression))
   (acknowledgement expr))
 
+(defclass external-reference (has-properties)
+  ((url :initarg :url :initform (error "url is required") :accessor url :type string)
+   (reference-type :initarg :type :initform (error "type is required") :accessor reference-type :type (or external-reference-type string))
+   (comment :initarg :comment :initform "" :accessor comment :type string)
+   (hashes :initarg :hashes :initform #() :accessor hashes :type (vector hash))))
+
 (defclass component (has-bom-ref has-properties)
   ((component-type :initarg :type :initform (error "A component-type is required") :accessor component-type :type component-type)
    (mime-type :initarg :mime-type :initform "" :accessor mime-type :type string)
@@ -227,11 +300,81 @@
    (copyright :initarg :copyright :initform "" :accessor copyright :type string)
    (cpe :initarg :cpe :initform "" :accessor cpe :type string)
    (purl :initarg :purl :initform "" :accessor purl :type string)
+   (external-references :initarg :external-references :initform #() :accessor external-references :type (vector external-reference))
    (components :initarg :components :initform #() :accessor components :type (vector component))))
+
+(defclass dependency ()
+  ((ref :initarg :ref :initform (error "ref is required") :accessor ref :type string)
+   (depends-on :initarg :depends-on :initform #() :accessor depends-on :type (vector string))
+   (provides :initarg :provides :initform #() :accessor provides :type (vector string))))
+
+(defclass service (has-bom-ref has-properties)
+  ((provider :initarg :provider :initform nil :accessor provider :type (or null organizational-entity))
+   (group :initarg :group :initform "" :accessor group :type string)
+   (name :initarg :name :initform (error "name is required") :accessor name :type string)
+   (version :initarg :version :initform "" :accessor version :type string)
+   (description :initarg :description :initform "" :accessor description :type string)
+   (endpoints :initarg :endpoints :initform #() :accessor endpoints :type (vector string))
+   (authenticated :initarg :authenticated :initform nil :accessor authenticated :type (or null boolean))
+   (x-trust-boundary :initarg :x-trust-boundary :initform nil :accessor x-trust-boundary :type (or null boolean))
+   (trust-zone :initarg :trust-zone :initform "" :accessor trust-zone :type string)
+   (licenses :initarg :licenses :initform #() :accessor licenses :type (vector (or license license-expression)))
+   (external-references :initarg :external-references :initform #() :accessor external-references :type (vector external-reference))
+   (services :initarg :services :initform #() :accessor services :type (vector service))))
+
+(defclass vulnerability-source ()
+  ((name :initarg :name :initform "" :accessor name :type string)
+   (url :initarg :url :initform "" :accessor url :type string)))
+
+(defclass vulnerability-reference ()
+  ((id :initarg :id :initform "" :accessor id :type string)
+   (source :initarg :source :initform nil :accessor source :type (or null vulnerability-source))))
+
+(defclass vulnerability-rating ()
+  ((source :initarg :source :initform nil :accessor source :type (or null vulnerability-source))
+   (score :initarg :score :initform nil :accessor score :type (or null number))
+   (severity :initarg :severity :initform nil :accessor severity :type (or null severity-type string))
+   (score-method :initarg :method :initform nil :accessor score-method :type (or null score-method-type string))
+   (score-vector :initarg :vector :initform "" :accessor score-vector :type string)
+   (justification :initarg :justification :initform "" :accessor justification :type string)))
+
+(defclass vulnerability-advisory ()
+  ((title :initarg :title :initform "" :accessor title :type string)
+   (url :initarg :url :initform "" :accessor url :type string)))
+
+(defclass vulnerability-analysis ()
+  ((state :initarg :state :initform nil :accessor state :type (or null impact-analysis-state string))
+   (justification :initarg :justification :initform nil :accessor justification :type (or null impact-analysis-justification string))
+   (response :initarg :response :initform #() :accessor response :type (vector string))
+   (detail :initarg :detail :initform "" :accessor detail :type string)
+   (first-issued :initarg :first-issued :initform "" :accessor first-issued :type string)
+   (last-updated :initarg :last-updated :initform "" :accessor last-updated :type string)))
+
+(defclass vulnerability-target ()
+  ((ref :initarg :ref :initform (error "ref is required") :accessor ref :type string)
+   (versions :initarg :versions :initform #() :accessor versions :type vector)))
+
+(defclass vulnerability (has-bom-ref has-properties)
+  ((id :initarg :id :initform "" :accessor id :type string)
+   (source :initarg :source :initform nil :accessor source :type (or null vulnerability-source))
+   (references :initarg :references :initform #() :accessor references :type (vector vulnerability-reference))
+   (ratings :initarg :ratings :initform #() :accessor ratings :type (vector vulnerability-rating))
+   (cwes :initarg :cwes :initform #() :accessor cwes :type (vector integer))
+   (description :initarg :description :initform "" :accessor description :type string)
+   (detail :initarg :detail :initform "" :accessor detail :type string)
+   (recommendation :initarg :recommendation :initform "" :accessor recommendation :type string)
+   (workaround :initarg :workaround :initform "" :accessor workaround :type string)
+   (advisories :initarg :advisories :initform #() :accessor advisories :type (vector vulnerability-advisory))
+   (created :initarg :created :initform "" :accessor created :type string)
+   (published :initarg :published :initform "" :accessor published :type string)
+   (updated :initarg :updated :initform "" :accessor updated :type string)
+   (rejected :initarg :rejected :initform "" :accessor rejected :type string)
+   (analysis :initarg :analysis :initform nil :accessor analysis :type (or null vulnerability-analysis))
+   (affects :initarg :affects :initform #() :accessor affects :type (vector vulnerability-target))))
 
 (defclass tools ()
   ((components :initarg :components :initform #() :accessor components :type (vector component))
-   (services   :initarg :services   :initform #() :accessor services   :type vector)))
+   (services   :initarg :services   :initform #() :accessor services   :type (vector service))))
 
 (defclass sbom-metadata (has-properties)
   ((timestamp    :initarg :timestamp    :initform ""  :accessor timestamp    :type string)
@@ -249,7 +392,11 @@
    (serial-number :initarg :serial-number :initform "" :accessor serial-number :type string)
    (version :initarg :version :initform 1 :accessor version :type integer)
    (metadata :initarg :metadata :initform nil :accessor metadata :type (or null sbom-metadata))
-   (components :initarg :components :initform #() :accessor components :type (vector component))))
+   (components :initarg :components :initform #() :accessor components :type (vector component))
+   (services :initarg :services :initform #() :accessor services :type (vector service))
+   (external-references :initarg :external-references :initform #() :accessor external-references :type (vector external-reference))
+   (dependencies :initarg :dependencies :initform #() :accessor dependencies :type (vector dependency))
+   (vulnerabilities :initarg :vulnerabilities :initform #() :accessor vulnerabilities :type (vector vulnerability))))
 
 (defgeneric tool-components (object)
   (:documentation "Returns the vector of tool components from OBJECT (TOOLS, SBOM-METADATA, or SBOM)."))
@@ -290,13 +437,29 @@
   #())
 
 (defmethod print-object ((obj sbom) stream)
-  (print-unreadable-object (obj stream :type t :identity t)
+  (print-unreadable-object (obj stream :type t :identity nil)
     (format stream "Schema: ~A, Bom Version: ~A, Spec Version: ~A, Serial Number: ~A, Version: ~A"
             (schema obj)
             (bom-format obj)
             (spec-version obj)
             (serial-number obj)
             (version obj))))
+
+(defmethod print-object ((obj component) stream)
+  (print-unreadable-object (obj stream :type t :identity nil)
+    (let ((name (if (slot-boundp obj 'name) (name obj) ""))
+          (ver (if (slot-boundp obj 'version) (version obj) ""))
+          (type (if (slot-boundp obj 'component-type) (component-type obj) "")))
+      (if (and ver (plusp (length ver)))
+          (format stream "Name: ~A, Version: ~A, Type: ~A" name ver type)
+          (format stream "Name: ~A, Type: ~A" name type)))))
+
+(defmethod print-object ((obj dependency) stream)
+  (print-unreadable-object (obj stream :type t :identity nil)
+    (format stream "Ref: ~A, Depends-On: ~D, Provides: ~D"
+            (if (slot-boundp obj 'ref) (ref obj) "")
+            (if (slot-boundp obj 'depends-on) (length (depends-on obj)) 0)
+            (if (slot-boundp obj 'provides) (length (provides obj)) 0))))
 
 (defun to-keyword (str)
   (when str
@@ -434,25 +597,155 @@
       #()
       (map 'vector #'build-license-choice vec)))
 
-(defun build-components (vec)
+(defun build-external-reference (data)
+  (let* ((type-str (gethash "type" data))
+         (kw (when type-str (to-keyword type-str)))
+         (ref-type (if (and kw (typep kw 'external-reference-type)) kw type-str)))
+    (make-instance 'external-reference
+                   :url (gethash "url" data)
+                   :type ref-type
+                   :comment (gethash "comment" data "")
+                   :hashes (build-hashes (gethash "hashes" data #()))
+                   :properties (build-properties (gethash "properties" data #())))))
+
+(defun build-external-references (vec)
   (if (or (null vec) (zerop (length vec)))
       #()
-      (map 'vector #'build-component vec)))
+      (map 'vector #'build-external-reference vec)))
+
+(defun build-dependency (data)
+  (make-instance 'dependency
+                 :ref (gethash "ref" data)
+                 :depends-on (gethash "dependsOn" data #())
+                 :provides (gethash "provides" data #())))
+
+(defun build-dependencies (vec)
+  (if (or (null vec) (zerop (length vec)))
+      #()
+      (map 'vector #'build-dependency vec)))
+
+(defun build-service (data)
+  (make-instance 'service
+                 :bom-ref (gethash "bom-ref" data "")
+                 :provider (when (gethash "provider" data)
+                             (build-entity (gethash "provider" data)))
+                 :group (gethash "group" data "")
+                 :name (gethash "name" data)
+                 :version (gethash "version" data "")
+                 :description (gethash "description" data "")
+                 :endpoints (gethash "endpoints" data #())
+                 :authenticated (gethash "authenticated" data nil)
+                 :x-trust-boundary (gethash "x-trust-boundary" data nil)
+                 :trust-zone (gethash "trustZone" data "")
+                 :licenses (build-licenses (gethash "licenses" data #()))
+                 :external-references (build-external-references (gethash "externalReferences" data #()))
+                 :services (build-services (gethash "services" data #()))
+                 :properties (build-properties (gethash "properties" data #()))))
+
+(defun build-services (vec)
+  (if (or (null vec) (zerop (length vec)))
+      #()
+      (map 'vector #'build-service vec)))
+
+(defun build-vulnerability-source (data)
+  (when data
+    (make-instance 'vulnerability-source
+                   :name (gethash "name" data "")
+                   :url (gethash "url" data ""))))
+
+(defun build-vulnerability-reference (data)
+  (make-instance 'vulnerability-reference
+                 :id (gethash "id" data "")
+                 :source (build-vulnerability-source (gethash "source" data))))
+
+(defun build-vulnerability-rating (data)
+  (let* ((sev-str (gethash "severity" data))
+         (sev-kw (when sev-str (to-keyword sev-str)))
+         (sev-val (if (and sev-kw (typep sev-kw 'severity-type)) sev-kw sev-str))
+         (m-str (gethash "method" data))
+         (m-kw (when m-str (to-keyword m-str)))
+         (m-val (if (and m-kw (typep m-kw 'score-method-type)) m-kw m-str)))
+    (make-instance 'vulnerability-rating
+                   :source (build-vulnerability-source (gethash "source" data))
+                   :score (gethash "score" data nil)
+                   :severity sev-val
+                   :method m-val
+                   :vector (gethash "vector" data "")
+                   :justification (gethash "justification" data ""))))
+
+(defun build-vulnerability-advisory (data)
+  (make-instance 'vulnerability-advisory
+                 :title (gethash "title" data "")
+                 :url (gethash "url" data "")))
+
+(defun build-vulnerability-analysis (data)
+  (when data
+    (let* ((s-str (gethash "state" data))
+           (s-kw (when s-str (to-keyword s-str)))
+           (s-val (if (and s-kw (typep s-kw 'impact-analysis-state)) s-kw s-str))
+           (j-str (gethash "justification" data))
+           (j-kw (when j-str (to-keyword j-str)))
+           (j-val (if (and j-kw (typep j-kw 'impact-analysis-justification)) j-kw j-str)))
+      (make-instance 'vulnerability-analysis
+                     :state s-val
+                     :justification j-val
+                     :response (gethash "response" data #())
+                     :detail (gethash "detail" data "")
+                     :first-issued (gethash "firstIssued" data "")
+                     :last-updated (gethash "lastUpdated" data "")))))
+
+(defun build-vulnerability-target (data)
+  (make-instance 'vulnerability-target
+                 :ref (gethash "ref" data)
+                 :versions (gethash "versions" data #())))
+
+(defun build-vulnerability (data)
+  (make-instance 'vulnerability
+                 :bom-ref (gethash "bom-ref" data "")
+                 :id (gethash "id" data "")
+                 :source (build-vulnerability-source (gethash "source" data))
+                 :references (if (gethash "references" data)
+                                 (map 'vector #'build-vulnerability-reference (gethash "references" data))
+                                 #())
+                 :ratings (if (gethash "ratings" data)
+                              (map 'vector #'build-vulnerability-rating (gethash "ratings" data))
+                              #())
+                 :cwes (gethash "cwes" data #())
+                 :description (gethash "description" data "")
+                 :detail (gethash "detail" data "")
+                 :recommendation (gethash "recommendation" data "")
+                 :workaround (gethash "workaround" data "")
+                 :advisories (if (gethash "advisories" data)
+                                 (map 'vector #'build-vulnerability-advisory (gethash "advisories" data))
+                                 #())
+                 :created (gethash "created" data "")
+                 :published (gethash "published" data "")
+                 :updated (gethash "updated" data "")
+                 :rejected (gethash "rejected" data "")
+                 :analysis (build-vulnerability-analysis (gethash "analysis" data))
+                 :affects (if (gethash "affects" data)
+                              (map 'vector #'build-vulnerability-target (gethash "affects" data))
+                              #())
+                 :properties (build-properties (gethash "properties" data #()))))
+
+(defun build-vulnerabilities (vec)
+  (if (or (null vec) (zerop (length vec)))
+      #()
+      (map 'vector #'build-vulnerability vec)))
 
 (defun build-component (data)
   (let* ((ctype (to-keyword (gethash "type" data)))
          (scope-str (gethash "scope" data))
          (scope-val (if scope-str (to-keyword scope-str) nil))
-         (comp (make-instance 'component :type ctype :name (gethash "name" data))))
+         (comp (make-instance 'component
+                              :type ctype
+                              :name (gethash "name" data))))
     (setf (bom-ref comp) (gethash "bom-ref" data ""))
     (setf (mime-type comp) (gethash "mime-type" data ""))
-
     (when (gethash "supplier" data)
       (setf (supplier comp) (build-entity (gethash "supplier" data))))
-
     (when (gethash "manufacturer" data)
       (setf (manufacturer comp) (build-entity (gethash "manufacturer" data))))
-
     (setf (authors comp) (build-contacts (gethash "authors" data #())))
     (setf (author comp) (gethash "author" data ""))
     (setf (publisher comp) (gethash "publisher" data ""))
@@ -467,16 +760,21 @@
     (setf (copyright comp) (gethash "copyright" data ""))
     (setf (cpe comp) (gethash "cpe" data ""))
     (setf (purl comp) (gethash "purl" data ""))
+    (setf (external-references comp) (build-external-references (gethash "externalReferences" data #())))
     (setf (properties comp) (build-properties (gethash "properties" data #())))
     (setf (components comp) (build-components (gethash "components" data #())))
     comp))
 
+(defun build-components (vec)
+  (if (or (null vec) (zerop (length vec)))
+      #()
+      (map 'vector #'build-component vec)))
 
 (defun build-tools (data)
   (when data
     (make-instance 'tools
                    :components (build-components (gethash "components" data #()))
-                   :services (gethash "services" data #()))))
+                   :services (build-services (gethash "services" data #())))))
 
 (defun build-metadata (data)
   (when data
@@ -484,17 +782,13 @@
       (setf (timestamp meta) (gethash "timestamp" data ""))
       (setf (tools meta) (build-tools (gethash "tools" data)))
       (setf (authors meta) (build-contacts (gethash "authors" data #())))
-
       (when (gethash "component" data)
         (setf (component meta) (build-component (gethash "component" data))))
-
       (let ((mfg (or (gethash "manufacturer" data) (gethash "manufacture" data))))
         (when mfg
           (setf (manufacturer meta) (build-entity mfg))))
-
       (when (gethash "supplier" data)
         (setf (supplier meta) (build-entity (gethash "supplier" data))))
-
       (setf (licenses meta) (build-licenses (gethash "licenses" data #())))
       (setf (properties meta) (build-properties (gethash "properties" data #())))
       meta)))
@@ -504,8 +798,10 @@
         (spec (gethash "specVersion" sbom)))
     (unless (and (stringp fmt) (string= fmt "CycloneDX"))
       (error 'unsupported-bom-format :format fmt))
+
     (unless (and (stringp spec) (string= spec "1.7"))
       (error 'unsupported-spec-version :spec-version spec))
+
     (let ((obj (make-instance 'sbom)))
       (setf (schema obj) (gethash "$schema" sbom ""))
       (setf (bom-format obj) :CycloneDX)
@@ -514,4 +810,8 @@
       (setf (version obj) (gethash "version" sbom 1))
       (setf (metadata obj) (build-metadata (gethash "metadata" sbom)))
       (setf (components obj) (build-components (gethash "components" sbom #())))
+      (setf (services obj) (build-services (gethash "services" sbom #())))
+      (setf (external-references obj) (build-external-references (gethash "externalReferences" sbom #())))
+      (setf (dependencies obj) (build-dependencies (gethash "dependencies" sbom #())))
+      (setf (vulnerabilities obj) (build-vulnerabilities (gethash "vulnerabilities" sbom #())))
       obj)))

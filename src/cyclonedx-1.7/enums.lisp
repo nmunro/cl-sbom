@@ -7,7 +7,12 @@
            #:acknowledgement-type
            #:encoding-type
            #:license-type
-           #:licence-id-type))
+           #:licence-id-type
+           #:external-reference-type
+           #:severity-type
+           #:score-method-type
+           #:impact-analysis-state
+           #:impact-analysis-justification))
 
 (in-package :cl-sbom/cyclonedx-1.7/enums)
 
@@ -910,3 +915,94 @@
     :vsftpd-openssl-exception
     :WxWindows-exception-3.1
     :x11vnc-openssl-exception))
+
+(deftype external-reference-type ()
+  '(member
+    :vcs
+    :issue-tracker
+    :website
+    :advisories
+    :bom
+    :mailing-list
+    :social
+    :chat
+    :documentation
+    :support
+    :source-distribution
+    :distribution
+    :distribution-intake
+    :license
+    :build-meta
+    :build-system
+    :release-notes
+    :security-contact
+    :model-card
+    :log
+    :configuration
+    :evidence
+    :formulation
+    :attestation
+    :threat-model
+    :adversary-model
+    :risk-assessment
+    :vulnerability-assertion
+    :exploitability-statement
+    :pentest-report
+    :static-analysis-report
+    :dynamic-analysis-report
+    :runtime-analysis-report
+    :component-analysis-report
+    :maturity-report
+    :certification-report
+    :codified-infrastructure
+    :quality-metrics
+    :poam
+    :electronic-signature
+    :digital-signature
+    :rfc-9116
+    :patent
+    :patent-family
+    :patent-assertion
+    :citation
+    :other))
+
+(deftype severity-type ()
+  '(member
+    :critical
+    :high
+    :medium
+    :low
+    :info
+    :none
+    :unknown))
+
+(deftype score-method-type ()
+  '(member
+    :CVSSv2
+    :CVSSv3
+    :CVSSv31
+    :CVSSv4
+    :OWASP
+    :SSVC
+    :other))
+
+(deftype impact-analysis-state ()
+  '(member
+    :resolved
+    :resolved_with_pedigree
+    :exploitable
+    :in_triage
+    :false_positive
+    :not_affected))
+
+(deftype impact-analysis-justification ()
+  '(member
+    :code_not_present
+    :code_not_reachable
+    :requires_configuration
+    :requires_dependency
+    :requires_environment
+    :protected_by_compiler
+    :protected_at_runtime
+    :protected_at_perimeter
+    :protected_by_mitigating_control))

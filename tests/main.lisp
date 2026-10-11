@@ -9,7 +9,12 @@
                 #:acknowledgement-type
                 #:encoding-type
                 #:license-type
-                #:licence-id-type)
+                #:licence-id-type
+                #:external-reference-type
+                #:severity-type
+                #:score-method-type
+                #:impact-analysis-state
+                #:impact-analysis-justification)
   (:import-from :cl-sbom/cyclonedx-1.7
                 #:sbom
                 #:sbom-metadata
@@ -64,7 +69,72 @@
                 #:build-license
                 #:sbom-error
                 #:unsupported-bom-format
-                #:unsupported-spec-version))
+                #:unsupported-spec-version
+                #:external-reference
+                #:build-external-reference
+                #:build-external-references
+                #:external-references
+                #:reference-type
+                #:comment
+                #:dependency
+                #:build-dependency
+                #:build-dependencies
+                #:dependencies
+                #:ref
+                #:depends-on
+                #:provides
+                #:service
+                #:build-service
+                #:build-services
+                #:provider
+                #:endpoints
+                #:authenticated
+                #:x-trust-boundary
+                #:trust-zone
+                #:vulnerability
+                #:build-vulnerability
+                #:build-vulnerabilities
+                #:vulnerability-source
+                #:build-vulnerability-source
+                #:vulnerability-reference
+                #:build-vulnerability-reference
+                #:vulnerability-rating
+                #:build-vulnerability-rating
+                #:vulnerability-advisory
+                #:build-vulnerability-advisory
+                #:vulnerability-analysis
+                #:build-vulnerability-analysis
+                #:vulnerability-target
+                #:build-vulnerability-target
+                #:score
+                #:severity
+                #:score-method
+                #:score-vector
+                #:justification
+                #:title
+                #:state
+                #:response
+                #:detail
+                #:first-issued
+                #:last-updated
+                #:created
+                #:published
+                #:updated
+                #:rejected
+                #:recommendation
+                #:workaround
+                #:cwes
+                #:ratings
+                #:advisories
+                #:analysis
+                #:affects
+                #:references
+                #:versions
+                #:source
+                #:description
+                #:group
+                #:url
+                #:vulnerabilities))
 (in-package :cl-sbom/tests/main)
 
 ;; NOTE: To run this test file, execute `(asdf:test-system :cl-sbom)' in your Lisp.
@@ -1204,7 +1274,34 @@
             (ok (eq (alg (aref h-vec 0)) :SHA-1))
             (ok (string= (content (aref h-vec 0)) "505fe275888ebe08b0f1c474bd395d84217bf4c8"))
             (ok (eq (alg (aref h-vec 1)) :SHA-256))
-            (ok (string= (content (aref h-vec 1)) "5b6e66467de39cf6f108c55674ae90be274bde59e33cf5b5fe1313bbc5794c97"))))))))
+            (ok (string= (content (aref h-vec 1)) "5b6e66467de39cf6f108c55674ae90be274bde59e33cf5b5fe1313bbc5794c97"))))
+
+        ;; Component with externalReferences: wolfi
+        (let ((wolfi-comp (find "wolfi" comps :key #'name :test #'string=)))
+          (ok (not (null wolfi-comp)))
+          (let ((ext-vec (external-references wolfi-comp)))
+            (ok (= (length ext-vec) 2))
+            (let ((ext0 (aref ext-vec 0))
+                  (ext1 (aref ext-vec 1)))
+              (ok (eq (reference-type ext0) :issue-tracker))
+              (ok (string= (url ext0) "https://github.com/wolfi-dev/os/issues"))
+              (ok (eq (reference-type ext1) :website))
+              (ok (string= (url ext1) "https://wolfi.dev"))))))
+
+      ;; Dependencies
+      (let ((deps (dependencies sbom)))
+        (ok (= (length deps) 38))
+        (let ((dep0 (aref deps 0)))
+          (ok (typep dep0 'dependency))
+          (ok (string= (ref dep0) "pkg:apk/wolfi/apk-tools@2.14.10-r14?arch=aarch64&distro=wolfi-20230201&package-id=570ada9049c7c2f3"))
+          (ok (= (length (depends-on dep0)) 7))
+          (ok (string= (aref (depends-on dep0) 0) "pkg:apk/wolfi/ca-certificates-bundle@20260611-r1?arch=aarch64&distro=wolfi-20230201&package-id=34cb2abdbe4a5361&upstream=ca-certificates"))
+          (ok (equalp (provides dep0) #()))))
+
+      ;; Top-level collections
+      (ok (equalp (services sbom) #()))
+      (ok (equalp (external-references sbom) #()))
+      (ok (equalp (vulnerabilities sbom) #())))))
 
 (deftest test-build-sbom-validation
   (testing "invalid or missing bomFormat signals unsupported-bom-format"
@@ -1245,4 +1342,366 @@
         (ok (typep res 'sbom))
         (ok (eq (bom-format res) :CycloneDX))
         (ok (string= (spec-version res) "1.7"))))))
+
+(deftest test-cyclonedx-1-7-new-enums
+  (testing "valid external-reference-type values"
+    (let ((valid-refs '(:vcs
+                        :issue-tracker
+                        :website
+                        :advisories
+                        :bom
+                        :documentation
+                        :support
+                        :distribution
+                        :license
+                        :build-meta
+                        :release-notes
+                        :security-contact
+                        :model-card
+                        :log
+                        :configuration
+                        :evidence
+                        :attestation
+                        :threat-model
+                        :other)))
+      (dolist (ref-val valid-refs)
+        (ok (typep ref-val 'external-reference-type)
+            (format nil "~S should be a valid external-reference-type" ref-val))))
+    (ok (not (typep :unknown-reference 'external-reference-type)))
+    (ok (not (typep "website" 'external-reference-type)))
+    (ok (not (typep nil 'external-reference-type))))
+
+  (testing "valid severity-type values"
+    (let ((valid-sevs '(:critical :high :medium :low :info :none :unknown)))
+      (dolist (s valid-sevs)
+        (ok (typep s 'severity-type)
+            (format nil "~S should be a valid severity-type" s))))
+    (ok (not (typep :extreme 'severity-type)))
+    (ok (not (typep "high" 'severity-type)))
+    (ok (not (typep nil 'severity-type))))
+
+  (testing "valid score-method-type values"
+    (let ((valid-methods '(:CVSSv2 :CVSSv3 :CVSSv31 :CVSSv4 :OWASP :SSVC :other)))
+      (dolist (m valid-methods)
+        (ok (typep m 'score-method-type)
+            (format nil "~S should be a valid score-method-type" m))))
+    (ok (not (typep :UNKNOWN-METHOD 'score-method-type)))
+    (ok (not (typep "CVSSv3" 'score-method-type))))
+
+  (testing "valid impact-analysis-state values"
+    (let ((valid-states '(:resolved :resolved_with_pedigree :exploitable :in_triage :false_positive :not_affected)))
+      (dolist (st valid-states)
+        (ok (typep st 'impact-analysis-state)
+            (format nil "~S should be a valid impact-analysis-state" st))))
+    (ok (not (typep :unknown-state 'impact-analysis-state))))
+
+  (testing "valid impact-analysis-justification values"
+    (let ((valid-justs '(:code_not_present :code_not_reachable :requires_configuration
+                         :requires_dependency :requires_environment :protected_by_compiler
+                         :protected_at_runtime :protected_at_perimeter :protected_by_mitigating_control)))
+      (dolist (j valid-justs)
+        (ok (typep j 'impact-analysis-justification)
+            (format nil "~S should be a valid impact-analysis-justification" j))))
+    (ok (not (typep :not_a_justification 'impact-analysis-justification)))))
+
+(deftest test-external-reference-model-and-builders
+  (testing "external-reference model creation and slot accessors"
+    (let ((ext (make-instance 'external-reference
+                              :url "https://example.com/repo.git"
+                              :type :vcs
+                              :comment "Source code repository"
+                              :hashes (vector (make-instance 'hash :alg :SHA-256 :content "abc123hash"))
+                              :properties (vector (make-instance 'property :name "env" :value "prod")))))
+      (ok (typep ext 'external-reference))
+      (ok (typep ext 'has-properties))
+      (ok (string= (url ext) "https://example.com/repo.git"))
+      (ok (eq (reference-type ext) :vcs))
+      (ok (string= (comment ext) "Source code repository"))
+      (ok (= (length (hashes ext)) 1))
+      (ok (= (length (properties ext)) 1))))
+
+  (testing "build-external-reference and build-external-references from hash-table"
+    (let ((ht (make-hash-table :test 'equal)))
+      (setf (gethash "url" ht) "https://example.com/issues")
+      (setf (gethash "type" ht) "issue-tracker")
+      (setf (gethash "comment" ht) "Bug tracker")
+      (let ((ext (build-external-reference ht)))
+        (ok (typep ext 'external-reference))
+        (ok (string= (url ext) "https://example.com/issues"))
+        (ok (eq (reference-type ext) :issue-tracker))
+        (ok (string= (comment ext) "Bug tracker"))
+        (ok (equalp (hashes ext) #()))
+        (ok (equalp (properties ext) #()))))
+
+    (let ((vec (build-external-references #())))
+      (ok (equalp vec #())))
+    (ok (equalp (build-external-references nil) #()))))
+
+(deftest test-dependency-model-and-builders
+  (testing "dependency model creation"
+    (let ((dep (make-instance 'dependency
+                              :ref "pkg:npm/foo@1.0.0"
+                              :depends-on #("pkg:npm/bar@1.0.0" "pkg:npm/baz@1.0.0")
+                              :provides #("pkg:npm/feature@1.0.0"))))
+      (ok (typep dep 'dependency))
+      (ok (string= (ref dep) "pkg:npm/foo@1.0.0"))
+      (ok (= (length (depends-on dep)) 2))
+      (ok (= (length (provides dep)) 1))))
+
+  (testing "build-dependency and build-dependencies"
+    (let ((ht (make-hash-table :test 'equal)))
+      (setf (gethash "ref" ht) "pkg:golang/app@1.0")
+      (setf (gethash "dependsOn" ht) #("pkg:golang/lib1@1.0"))
+      (let ((dep (build-dependency ht)))
+        (ok (typep dep 'dependency))
+        (ok (string= (ref dep) "pkg:golang/app@1.0"))
+        (ok (= (length (depends-on dep)) 1))
+        (ok (string= (aref (depends-on dep) 0) "pkg:golang/lib1@1.0"))
+        (ok (equalp (provides dep) #()))))
+    (ok (equalp (build-dependencies nil) #()))
+    (ok (equalp (build-dependencies #()) #())))
+
+  (testing "dependency print-object includes ref, depends-on count, and provides count"
+    (let* ((dep (make-instance 'dependency
+                               :ref "pkg:npm/foo@1.0.0"
+                               :depends-on #("pkg:npm/bar@1.0.0" "pkg:npm/baz@1.0.0")
+                               :provides #("pkg:npm/feature@1.0.0")))
+           (printed (format nil "~A" dep)))
+      (ok (search "Ref: pkg:npm/foo@1.0.0" printed))
+      (ok (search "Depends-On: 2" printed))
+      (ok (search "Provides: 1" printed)))))
+
+(deftest test-service-model-and-builders
+  (testing "service model creation and mixins"
+    (let* ((child-svc (make-instance 'service :name "auth-subservice"))
+           (lic (make-instance 'license :id :Apache-2.0))
+           (ref (make-instance 'external-reference :url "https://auth.example.com" :type :website))
+           (prop (make-instance 'property :name "tier" :value "1"))
+           (provider (make-instance 'organizational-entity :name "AuthCorp"))
+           (svc (make-instance 'service
+                               :bom-ref "svc-123"
+                               :name "auth-service"
+                               :group "security"
+                               :version "2.1.0"
+                               :description "Authentication microservice"
+                               :provider provider
+                               :endpoints #("https://auth.example.com/v1" "https://auth.example.com/v2")
+                               :authenticated t
+                               :x-trust-boundary t
+                               :trust-zone "internal"
+                               :licenses (vector lic)
+                               :external-references (vector ref)
+                               :services (vector child-svc)
+                               :properties (vector prop))))
+      (ok (typep svc 'service))
+      (ok (typep svc 'has-bom-ref))
+      (ok (typep svc 'has-properties))
+      (ok (string= (bom-ref svc) "svc-123"))
+      (ok (string= (name svc) "auth-service"))
+      (ok (string= (group svc) "security"))
+      (ok (string= (version svc) "2.1.0"))
+      (ok (string= (description svc) "Authentication microservice"))
+      (ok (typep (provider svc) 'organizational-entity))
+      (ok (string= (name (provider svc)) "AuthCorp"))
+      (ok (= (length (endpoints svc)) 2))
+      (ok (eq (authenticated svc) t))
+      (ok (eq (x-trust-boundary svc) t))
+      (ok (string= (trust-zone svc) "internal"))
+      (ok (= (length (licenses svc)) 1))
+      (ok (= (length (external-references svc)) 1))
+      (ok (= (length (services svc)) 1))
+      (ok (= (length (properties svc)) 1))))
+
+  (testing "build-service and build-services from hash-table"
+    (let ((ht (make-hash-table :test 'equal)))
+      (setf (gethash "bom-ref" ht) "svc-456")
+      (setf (gethash "name" ht) "payment-service")
+      (setf (gethash "version" ht) "1.0.0")
+      (setf (gethash "endpoints" ht) #("/pay"))
+      (setf (gethash "authenticated" ht) t)
+      (let ((svc (build-service ht)))
+        (ok (typep svc 'service))
+        (ok (string= (bom-ref svc) "svc-456"))
+        (ok (string= (name svc) "payment-service"))
+        (ok (string= (version svc) "1.0.0"))
+        (ok (= (length (endpoints svc)) 1))
+        (ok (eq (authenticated svc) t))
+        (ok (null (provider svc)))
+        (ok (equalp (licenses svc) #()))
+        (ok (equalp (external-references svc) #()))
+        (ok (equalp (services svc) #()))))
+    (ok (equalp (build-services nil) #()))
+    (ok (equalp (build-services #()) #()))))
+
+(deftest test-vulnerability-model-and-builders
+  (testing "vulnerability sub-models and builders"
+    ;; Source
+    (let* ((src-ht (make-hash-table :test 'equal))
+           (_ (progn
+                (setf (gethash "name" src-ht) "NVD")
+                (setf (gethash "url" src-ht) "https://nvd.nist.gov")))
+           (src (build-vulnerability-source src-ht)))
+      (declare (ignore _))
+      (ok (typep src 'vulnerability-source))
+      (ok (string= (name src) "NVD"))
+      (ok (string= (url src) "https://nvd.nist.gov")))
+
+    ;; Reference
+    (let* ((ref-ht (make-hash-table :test 'equal))
+           (_ (setf (gethash "id" ref-ht) "CVE-2023-1234"))
+           (vref (build-vulnerability-reference ref-ht)))
+      (declare (ignore _))
+      (ok (typep vref 'vulnerability-reference))
+      (ok (string= (id vref) "CVE-2023-1234")))
+
+    ;; Rating
+    (let* ((rate-ht (make-hash-table :test 'equal))
+           (_ (progn
+                (setf (gethash "score" rate-ht) 9.8)
+                (setf (gethash "severity" rate-ht) "critical")
+                (setf (gethash "method" rate-ht) "CVSSv31")
+                (setf (gethash "vector" rate-ht) "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H")
+                (setf (gethash "justification" rate-ht) "Remotely exploitable")))
+           (rating (build-vulnerability-rating rate-ht)))
+      (declare (ignore _))
+      (ok (typep rating 'vulnerability-rating))
+      (ok (= (score rating) 9.8))
+      (ok (eq (severity rating) :critical))
+      (ok (eq (score-method rating) :CVSSv31))
+      (ok (string= (score-vector rating) "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"))
+      (ok (string= (justification rating) "Remotely exploitable")))
+
+    ;; Advisory
+    (let* ((adv-ht (make-hash-table :test 'equal))
+           (_ (progn
+                (setf (gethash "title" adv-ht) "GHSA Advisory")
+                (setf (gethash "url" adv-ht) "https://github.com/advisories/GHSA-1234")))
+           (adv (build-vulnerability-advisory adv-ht)))
+      (declare (ignore _))
+      (ok (typep adv 'vulnerability-advisory))
+      (ok (string= (title adv) "GHSA Advisory"))
+      (ok (string= (url adv) "https://github.com/advisories/GHSA-1234")))
+
+    ;; Analysis
+    (let* ((ana-ht (make-hash-table :test 'equal))
+           (_ (progn
+                (setf (gethash "state" ana-ht) "not_affected")
+                (setf (gethash "justification" ana-ht) "code_not_reachable")
+                (setf (gethash "detail" ana-ht) "Vulnerable code path is never called")
+                (setf (gethash "response" ana-ht) #("will_not_fix"))
+                (setf (gethash "firstIssued" ana-ht) "2026-01-01T00:00:00Z")
+                (setf (gethash "lastUpdated" ana-ht) "2026-01-02T00:00:00Z")))
+           (analysis (build-vulnerability-analysis ana-ht)))
+      (declare (ignore _))
+      (ok (typep analysis 'vulnerability-analysis))
+      (ok (eq (state analysis) :not_affected))
+      (ok (eq (justification analysis) :code_not_reachable))
+      (ok (string= (detail analysis) "Vulnerable code path is never called"))
+      (ok (= (length (response analysis)) 1))
+      (ok (string= (first-issued analysis) "2026-01-01T00:00:00Z"))
+      (ok (string= (last-updated analysis) "2026-01-02T00:00:00Z")))
+
+    ;; Target
+    (let* ((target-ht (make-hash-table :test 'equal))
+           (_ (progn
+                (setf (gethash "ref" target-ht) "pkg:npm/vulnerable-pkg@1.0.0")
+                (setf (gethash "versions" target-ht) #("1.0.0"))))
+           (target (build-vulnerability-target target-ht)))
+      (declare (ignore _))
+      (ok (typep target 'vulnerability-target))
+      (ok (string= (ref target) "pkg:npm/vulnerable-pkg@1.0.0"))
+      (ok (= (length (versions target)) 1))))
+
+  (testing "full vulnerability model and build-vulnerability"
+    (let ((v-ht (make-hash-table :test 'equal)))
+      (setf (gethash "bom-ref" v-ht) "vuln-cve-2024-9999")
+      (setf (gethash "id" v-ht) "CVE-2024-9999")
+      (setf (gethash "cwes" v-ht) #(79 89))
+      (setf (gethash "description" v-ht) "Buffer overflow vulnerability")
+      (setf (gethash "detail" v-ht) "Detailed explanation")
+      (setf (gethash "recommendation" v-ht) "Upgrade to version 2.0.0")
+      (setf (gethash "workaround" v-ht) "Disable affected endpoint")
+      (setf (gethash "created" v-ht) "2026-02-01T10:00:00Z")
+      (setf (gethash "published" v-ht) "2026-02-02T10:00:00Z")
+      (setf (gethash "updated" v-ht) "2026-02-03T10:00:00Z")
+      (let ((vuln (build-vulnerability v-ht)))
+        (ok (typep vuln 'vulnerability))
+        (ok (typep vuln 'has-bom-ref))
+        (ok (typep vuln 'has-properties))
+        (ok (string= (bom-ref vuln) "vuln-cve-2024-9999"))
+        (ok (string= (id vuln) "CVE-2024-9999"))
+        (ok (equalp (cwes vuln) #(79 89)))
+        (ok (string= (description vuln) "Buffer overflow vulnerability"))
+        (ok (string= (detail vuln) "Detailed explanation"))
+        (ok (string= (recommendation vuln) "Upgrade to version 2.0.0"))
+        (ok (string= (workaround vuln) "Disable affected endpoint"))
+        (ok (string= (created vuln) "2026-02-01T10:00:00Z"))
+        (ok (string= (published vuln) "2026-02-02T10:00:00Z"))
+        (ok (string= (updated vuln) "2026-02-03T10:00:00Z"))
+        (ok (equalp (ratings vuln) #()))
+        (ok (equalp (advisories vuln) #()))
+        (ok (equalp (references vuln) #()))
+        (ok (equalp (affects vuln) #()))))
+    (ok (equalp (build-vulnerabilities nil) #()))
+    (ok (equalp (build-vulnerabilities #()) #()))))
+
+(deftest test-cl-sbom-parse-entrypoint
+  (testing "parsing sbom via cl-sbom:parse with explicit and default formats"
+    (let* ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json"))
+           ;; Explicit :format :cyclonedx-1.7
+           (sbom-1 (cl-sbom:parse sbom-path :format :cyclonedx-1.7))
+           ;; Default format
+           (sbom-2 (cl-sbom:parse sbom-path))
+           ;; Format :cyclonedx
+           (sbom-3 (cl-sbom:parse sbom-path :format :cyclonedx)))
+      (ok (typep sbom-1 'cl-sbom:sbom))
+      (ok (typep sbom-2 'cl-sbom:sbom))
+      (ok (typep sbom-3 'cl-sbom:sbom))
+      (ok (eq (cl-sbom:bom-format sbom-1) :CycloneDX))
+      (ok (string= (cl-sbom:spec-version sbom-1) "1.7"))
+      (ok (= (length (cl-sbom:components sbom-1)) 703))
+      (ok (= (length (cl-sbom:dependencies sbom-1)) 38))
+      (ok (equalp (cl-sbom:services sbom-1) #()))
+      (ok (equalp (cl-sbom:vulnerabilities sbom-1) #()))
+      (ok (equalp (cl-sbom:external-references sbom-1) #()))
+
+      ;; Test direct accessors from cl-sbom without reaching into subpackages
+      (let ((c0 (aref (cl-sbom:components sbom-1) 0)))
+        (ok (string= (cl-sbom:name c0) "apk-tools"))
+        (ok (string= (cl-sbom:version c0) "2.14.10-r14"))
+        (ok (eq (cl-sbom:component-type c0) :library))
+        (ok (string= (cl-sbom:purl c0) "pkg:apk/wolfi/apk-tools@2.14.10-r14?arch=aarch64&distro=wolfi-20230201"))
+        (ok (= (length (cl-sbom:licenses c0)) 1)))
+
+      (let ((meta (cl-sbom:metadata sbom-1)))
+        (ok (typep meta 'cl-sbom:sbom-metadata))
+        (ok (string= (cl-sbom:timestamp meta) "2026-09-22T22:10:41+01:00"))
+        (ok (= (length (cl-sbom:tool-components sbom-1)) 1))
+        (ok (equalp (cl-sbom:tool-services sbom-1) #())))
+
+      ;; Test component print-object displays name, version, and type without memory identity
+      (let* ((c0 (aref (cl-sbom:components sbom-1) 0))
+             (str (format nil "~A" c0)))
+        (ok (search "Name: apk-tools" str))
+        (ok (search "Version: 2.14.10-r14" str))
+        (ok (search "Type: LIBRARY" str))
+        (ok (not (search "{" str))))))
+
+  (testing "component print-object includes name and type without identity"
+    (let* ((comp (make-instance 'cl-sbom:component :name "my-lib" :version "1.0.0" :type :library))
+           (printed (format nil "~A" comp)))
+      (ok (search "Name: my-lib" printed))
+      (ok (search "Version: 1.0.0" printed))
+      (ok (search "Type: LIBRARY" printed))
+      (ok (not (search "{" printed)))))
+
+  (testing "parsing sbom with invalid or unsupported format signals unsupported-bom-format"
+    (let ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json")))
+      (ok (signals (cl-sbom:parse sbom-path :format :spdx) 'cl-sbom:unsupported-bom-format))
+      (ok (signals (cl-sbom:parse sbom-path :format :spdx-2.3) 'cl-sbom:unsupported-bom-format))
+      (ok (signals (cl-sbom:parse sbom-path :format :unknown) 'cl-sbom:sbom-error))
+      (handler-case (cl-sbom:parse sbom-path :format :spdx)
+        (cl-sbom:unsupported-bom-format (c)
+          (ok (eq (cl-sbom:bom-format c) :spdx)))))))
+
 
