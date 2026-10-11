@@ -21,9 +21,6 @@
            #:dependencies-of
            #:dependents-of
            #:relationships-of
-           #:root-p
-           #:leaf-p
-           #:isolated-p
            #:build-sbom
            #:build-metadata
            #:build-tools
@@ -720,61 +717,6 @@ If TRANSITIVE is T, recursively resolves both downstream dependencies and upstre
       (values nil nil)
       (values (dependencies-of sbom comp-or-ref :transitive transitive)
               (dependents-of sbom comp-or-ref :transitive transitive))))
-
-(defun %has-dependencies-p (sbom target-ref)
-  "Returns T if TARGET-REF has at least one dependency in SBOM."
-  (when (and target-ref (plusp (length target-ref)))
-    (let* ((dep-index (ensure-dependency-index sbom))
-           (dep-entry (gethash target-ref dep-index)))
-      (and dep-entry
-           (slot-boundp dep-entry 'depends-on)
-           (vectorp (depends-on dep-entry))
-           (plusp (length (depends-on dep-entry)))))))
-
-(defun %has-dependents-p (sbom target-ref)
-  "Returns T if TARGET-REF is depended on by at least one component in SBOM."
-  (when (and target-ref (plusp (length target-ref)))
-    (let* ((rev-index (ensure-dependents-index sbom))
-           (parents (gethash target-ref rev-index)))
-      (and parents (plusp (length parents))))))
-
-(defun root-p (sbom comp-or-ref)
-  "Returns T if COMP-OR-REF is a root component in SBOM (has dependencies, but no dependents)."
-  (when comp-or-ref
-    (let ((target-ref (etypecase comp-or-ref
-                        (string comp-or-ref)
-                        (has-bom-ref (if (slot-boundp comp-or-ref 'bom-ref)
-                                         (bom-ref comp-or-ref)
-                                         "")))))
-      (and (plusp (length target-ref))
-           (%has-dependencies-p sbom target-ref)
-           (not (%has-dependents-p sbom target-ref))))))
-
-(defun leaf-p (sbom comp-or-ref)
-  "Returns T if COMP-OR-REF is a leaf component in SBOM (is depended upon, but has no dependencies)."
-  (when comp-or-ref
-    (let ((target-ref (etypecase comp-or-ref
-                        (string comp-or-ref)
-                        (has-bom-ref (if (slot-boundp comp-or-ref 'bom-ref)
-                                         (bom-ref comp-or-ref)
-                                         "")))))
-      (and (plusp (length target-ref))
-           (%has-dependents-p sbom target-ref)
-           (not (%has-dependencies-p sbom target-ref))))))
-
-(defun isolated-p (sbom comp-or-ref)
-  "Returns T if COMP-OR-REF is an isolated component in SBOM (has neither dependencies nor dependents)."
-  (when comp-or-ref
-    (let ((comp (if (stringp comp-or-ref)
-                    (find-component sbom comp-or-ref)
-                    comp-or-ref)))
-      (when comp
-        (let ((target-ref (if (slot-boundp comp 'bom-ref)
-                              (bom-ref comp)
-                              "")))
-          (and (not (%has-dependencies-p sbom target-ref))
-               (not (%has-dependents-p sbom target-ref))))))))
-
 (defun to-keyword (str)
   (when str
     (make-keyword (string-upcase str))))

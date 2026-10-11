@@ -1967,56 +1967,7 @@
         (ok (null deps))
         (ok (null parents))))))
 
-(deftest test-component-predicates
-  (testing "root-p, leaf-p, and isolated-p on sbom.json components"
-    (let* ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json"))
-           (sbom (cl-sbom:parse sbom-path))
-           (wolfi-base-ref "pkg:apk/wolfi/wolfi-base@1-r7?arch=aarch64&distro=wolfi-20230201&package-id=860ff9983d9bf8a1")
-           (wolfi-keys-ref "pkg:apk/wolfi/wolfi-keys@1-r13?arch=aarch64&distro=wolfi-20230201&package-id=945e40ee55be743b")
-           (z-ref "pkg:apk/wolfi/zlib@1.3.2.1_rc20260601-r0?arch=aarch64&distro=wolfi-20230201&package-id=50a856ba27cac15a")
-           (dradis-ref "61289ac238cf2a58"))
 
-      ;; wolfi-base is a ROOT (depends on 3 packages, 0 parents)
-      (ok (cl-sbom:root-p sbom wolfi-base-ref))
-      (ok (not (cl-sbom:leaf-p sbom wolfi-base-ref)))
-      (ok (not (cl-sbom:isolated-p sbom wolfi-base-ref)))
-      (let ((comp (cl-sbom:find-component sbom wolfi-base-ref)))
-        (ok (cl-sbom:root-p sbom comp))
-        (ok (not (cl-sbom:leaf-p sbom comp)))
-        (ok (not (cl-sbom:isolated-p sbom comp))))
-
-      ;; wolfi-keys is a LEAF (depended on by wolfi-base, 0 dependencies)
-      (ok (not (cl-sbom:root-p sbom wolfi-keys-ref)))
-      (ok (cl-sbom:leaf-p sbom wolfi-keys-ref))
-      (ok (not (cl-sbom:isolated-p sbom wolfi-keys-ref)))
-      (let ((comp (cl-sbom:find-component sbom wolfi-keys-ref)))
-        (ok (not (cl-sbom:root-p sbom comp)))
-        (ok (cl-sbom:leaf-p sbom comp))
-        (ok (not (cl-sbom:isolated-p sbom comp))))
-
-      ;; zlib is an INTERMEDIATE node (3 dependencies, 6 parents)
-      (ok (not (cl-sbom:root-p sbom z-ref)))
-      (ok (not (cl-sbom:leaf-p sbom z-ref)))
-      (ok (not (cl-sbom:isolated-p sbom z-ref)))
-
-      ;; dradis-app is ISOLATED in the dependency graph (0 dependencies, 0 parents)
-      (ok (not (cl-sbom:root-p sbom dradis-ref)))
-      (ok (not (cl-sbom:leaf-p sbom dradis-ref)))
-      (ok (cl-sbom:isolated-p sbom dradis-ref))
-      (let ((comp (cl-sbom:find-component sbom dradis-ref)))
-        (ok (not (cl-sbom:root-p sbom comp)))
-        (ok (not (cl-sbom:leaf-p sbom comp)))
-        (ok (cl-sbom:isolated-p sbom comp)))))
-
-  (testing "nil and nonexistent ref handling"
-    (let* ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json"))
-           (sbom (cl-sbom:parse sbom-path)))
-      (ok (null (cl-sbom:root-p sbom nil)))
-      (ok (null (cl-sbom:leaf-p sbom nil)))
-      (ok (null (cl-sbom:isolated-p sbom nil)))
-      (ok (null (cl-sbom:root-p sbom "nonexistent-ref")))
-      (ok (null (cl-sbom:leaf-p sbom "nonexistent-ref")))
-      (ok (null (cl-sbom:isolated-p sbom "nonexistent-ref"))))))
 
 
 

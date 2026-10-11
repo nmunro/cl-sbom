@@ -253,33 +253,9 @@ Because `cl-sbom` avoids name conflicts with `COMMON-LISP`, downstream packages 
   - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L390-L405).
 * **Returns:** A flat list of all [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instances present in the SBOM document, traversing root metadata components, tool components, top-level components, and all recursively nested subcomponents.
 
-#### `(root-p sbom comp-or-ref)`
-* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L741-L752)
-* **Arguments:**
-  - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L390-L405).
-  - `comp-or-ref`: A [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instance or a `bom-ref` string.
-* **Returns:** `t` if the component is a root in the dependency graph (has dependencies, but no dependents), otherwise `nil`. Returns `nil` if `comp-or-ref` is `nil` or an unlisted `bom-ref`.
-* **Performance:** $O(1)$ fast check against pre-indexed dependency tables without traversing or consing.
-
-#### `(leaf-p sbom comp-or-ref)`
-* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L753-L764)
-* **Arguments:**
-  - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L390-L405).
-  - `comp-or-ref`: A [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instance or a `bom-ref` string.
-* **Returns:** `t` if the component is a leaf in the dependency graph (is depended upon by other components, but has no dependencies of its own), otherwise `nil`. Returns `nil` if `comp-or-ref` is `nil` or an unlisted `bom-ref`.
-* **Performance:** $O(1)$ fast check against pre-indexed dependency tables without traversing or consing.
-
-#### `(isolated-p sbom comp-or-ref)`
-* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L765-L777)
-* **Arguments:**
-  - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L390-L405).
-  - `comp-or-ref`: A [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instance or a `bom-ref` string.
-* **Returns:** `t` if the component is isolated (has neither dependencies nor dependents in the graph), otherwise `nil`. Returns `nil` if `comp-or-ref` is `nil` or is not found in the SBOM components list.
-* **Performance:** $O(1)$ fast check against pre-indexed dependency tables.
-
 ### Re-exported Symbols
 The package [`cl-sbom`](src/main.lisp#L1-L200) re-exports:
-* **Core Functions:** [`parse`](src/main.lisp#L182-L194), [`find-component`](src/cyclonedx-1.7/main.lisp#L556-L578), [`all-components`](src/cyclonedx-1.7/main.lisp#L518-L544), [`dependencies-of`](src/cyclonedx-1.7/main.lisp#L590-L638), [`dependents-of`](src/cyclonedx-1.7/main.lisp#L660-L703), [`relationships-of`](src/cyclonedx-1.7/main.lisp#L710-L719), [`root-p`](src/cyclonedx-1.7/main.lisp#L741-L752), [`leaf-p`](src/cyclonedx-1.7/main.lisp#L753-L764), [`isolated-p`](src/cyclonedx-1.7/main.lisp#L765-L777).
+* **Core Functions:** [`parse`](src/main.lisp#L182-L194), [`find-component`](src/cyclonedx-1.7/main.lisp#L556-L578), [`all-components`](src/cyclonedx-1.7/main.lisp#L518-L544), [`dependencies-of`](src/cyclonedx-1.7/main.lisp#L590-L638), [`dependents-of`](src/cyclonedx-1.7/main.lisp#L660-L703), [`relationships-of`](src/cyclonedx-1.7/main.lisp#L710-L719).
 * **All Models:** [`sbom`](src/cyclonedx-1.7/main.lisp#L388-L399), [`sbom-metadata`](src/cyclonedx-1.7/main.lisp#L379-L386), [`tools`](src/cyclonedx-1.7/main.lisp#L375-L377), [`component`](src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](src/cyclonedx-1.7/main.lisp#L311-L323), [`dependency`](src/cyclonedx-1.7/main.lisp#L306-L309), [`external-reference`](src/cyclonedx-1.7/main.lisp#L277-L281), [`vulnerability`](src/cyclonedx-1.7/main.lisp#L357-L373), and sub-models ([`vulnerability-source`](src/cyclonedx-1.7/main.lisp#L325-L327), [`vulnerability-rating`](src/cyclonedx-1.7/main.lisp#L333-L339), etc.).
 * **All Accessors & Mixins:** [`components`](src/cyclonedx-1.7/main.lisp#L395), [`dependencies`](src/cyclonedx-1.7/main.lisp#L398), [`vulnerabilities`](src/cyclonedx-1.7/main.lisp#L399), [`services`](src/cyclonedx-1.7/main.lisp#L396), [`metadata`](src/cyclonedx-1.7/main.lisp#L394), [`name`](src/cyclonedx-1.7/main.lisp#L292), [`version`](src/cyclonedx-1.7/main.lisp#L293), [`purl`](src/cyclonedx-1.7/main.lisp#L302), [`bom-ref`](src/cyclonedx-1.7/main.lisp#L202), [`properties`](src/cyclonedx-1.7/main.lisp#L205), [`tool-components`](src/cyclonedx-1.7/main.lisp#L401-L435), [`tool-services`](src/cyclonedx-1.7/main.lisp#L404-L437), [`acknowledge`](src/cyclonedx-1.7/main.lisp#L268-L275).
 * **All Conditions:** [`sbom-error`](src/cyclonedx-1.7/main.lisp#L182-L184), [`unsupported-bom-format`](src/cyclonedx-1.7/main.lisp#L186-L191), [`unsupported-spec-version`](src/cyclonedx-1.7/main.lisp#L193-L198).
@@ -676,22 +652,6 @@ Use `find-component` to search across all components in the document (including 
     (format t "  Dependents   (~D): ~{~A~^, ~}~%"
             (length parents)
             (mapcar #'cl-sbom:name parents))))
-
-;; 5. Classifying components (roots, leaves, isolated):
-(let ((all (cl-sbom:all-components sbom)))
-  ;; Filter top-level root components (entry points with dependencies, but no dependents):
-  (format t "Root components:~%")
-  (dolist (root (remove-if-not (lambda (c) (cl-sbom:root-p sbom c)) all))
-    (format t "  - ~A@~A~%" (cl-sbom:name root) (cl-sbom:version root)))
-
-  ;; Filter leaf dependencies (foundational packages that depend on nothing else):
-  (format t "Leaf components:~%")
-  (dolist (leaf (remove-if-not (lambda (c) (cl-sbom:leaf-p sbom c)) all))
-    (format t "  - ~A@~A~%" (cl-sbom:name leaf) (cl-sbom:version leaf)))
-
-  ;; Count isolated components (unlinked files or standalone tools):
-  (format t "Isolated components count: ~D~%"
-          (count-if (lambda (c) (cl-sbom:isolated-p sbom c)) all)))
 ```
 
 ### Auditing Vulnerabilities & CVSS Ratings
