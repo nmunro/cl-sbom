@@ -196,8 +196,3 @@
 
       (otherwise
        (error 'unsupported-bom-format :format format)))))
-
-(let ((sbom (parse #p"~/dev/common-lisp/cl-sbom/sbom.json")))
-  (multiple-value-bind (res others count)
-        (find-component sbom "pkg:apk/wolfi/apk-tools" :test #'search)
-      res))
