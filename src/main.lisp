@@ -5,6 +5,8 @@
   (:export #:parse
            #:all-components
            #:find-component
+           #:dependencies-of
+           #:dependents-of
            #:acknowledge
            #:acknowledgement
            #:acknowledgement-type

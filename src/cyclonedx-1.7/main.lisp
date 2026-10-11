@@ -18,6 +18,8 @@
                 #:impact-analysis-justification)
   (:export #:all-components
            #:find-component
+           #:dependencies-of
+           #:dependents-of
            #:build-sbom
            #:build-metadata
            #:build-tools
@@ -399,7 +401,9 @@
    (external-references :initarg :external-references :initform #() :accessor external-references :type (vector external-reference))
    (dependencies :initarg :dependencies :initform #() :accessor dependencies :type (vector dependency))
    (vulnerabilities :initarg :vulnerabilities :initform #() :accessor vulnerabilities :type (vector vulnerability))
-   (%component-index :initform nil :accessor %component-index)))
+   (%component-index :initform nil :accessor %component-index)
+   (%dependency-index :initform nil :accessor %dependency-index)
+   (%dependents-index :initform nil :accessor %dependents-index)))
 
 (defgeneric tool-components (object)
   (:documentation "Returns the vector of tool components from OBJECT (TOOLS, SBOM-METADATA, or SBOM)."))
@@ -574,6 +578,129 @@ Returns:
           (if ordered
               (values (first ordered) (rest ordered) (length ordered))
               (values nil nil 0))))))
+
+(defun ensure-dependency-index (sbom)
+  "Ensures and returns the cached hash table mapping ref string to dependency object for SBOM."
+  (or (%dependency-index sbom)
+      (let ((table (make-hash-table :test 'equal)))
+        (when (slot-boundp sbom 'dependencies)
+          (loop for dep across (dependencies sbom)
+                when (and (slot-boundp dep 'ref) (ref dep))
+                do (setf (gethash (ref dep) table) dep)))
+        (setf (%dependency-index sbom) table))))
+
+(defun dependencies-of (sbom comp-or-ref &key transitive)
+  "Returns a list of components that COMP-OR-REF depends on in SBOM.
+COMP-OR-REF can be a COMPONENT instance or a bom-ref string.
+If TRANSITIVE is T, transitively resolves dependencies via breadth-first search.
+If a dependency ref is not present as a component in SBOM, the bom-ref string is returned."
+  (let ((target-ref (etypecase comp-or-ref
+                      (string comp-or-ref)
+                      (has-bom-ref (if (slot-boundp comp-or-ref 'bom-ref)
+                                       (bom-ref comp-or-ref)
+                                       "")))))
+    (when (or (null target-ref) (zerop (length target-ref)))
+      (return-from dependencies-of nil))
+    (let ((dep-index (ensure-dependency-index sbom)))
+      (if (not transitive)
+          ;; Direct dependencies
+          (let ((dep-entry (gethash target-ref dep-index)))
+            (when (and dep-entry
+                       (slot-boundp dep-entry 'depends-on)
+                       (vectorp (depends-on dep-entry)))
+              (let ((visited (make-hash-table :test 'equal))
+                    (result nil))
+                (loop for ref across (depends-on dep-entry)
+                      unless (gethash ref visited)
+                        do (setf (gethash ref visited) t)
+                           (push (or (find-component sbom ref) ref) result))
+                (nreverse result))))
+          ;; Transitive dependencies (breadth-first search)
+          (let* ((visited (make-hash-table :test 'equal))
+                 (result nil)
+                 (queue (list target-ref))
+                 (queue-tail queue))
+            (setf (gethash target-ref visited) t)
+            (loop while queue
+                  for current-ref = (pop queue)
+                  for dep-entry = (gethash current-ref dep-index)
+                  when (and dep-entry
+                             (slot-boundp dep-entry 'depends-on)
+                             (vectorp (depends-on dep-entry)))
+                    do (loop for dep-ref across (depends-on dep-entry)
+                             unless (gethash dep-ref visited)
+                               do (setf (gethash dep-ref visited) t)
+                                  (push (or (find-component sbom dep-ref) dep-ref) result)
+                                  (let ((new-node (list dep-ref)))
+                                    (if queue
+                                        (setf (cdr queue-tail) new-node
+                                              queue-tail new-node)
+                                        (setf queue new-node
+                                              queue-tail new-node)))))
+            (nreverse result))))))
+
+(defun ensure-dependents-index (sbom)
+  "Ensures and returns the cached hash table mapping ref string to a list of refs that depend on it for SBOM."
+  (or (%dependents-index sbom)
+      (let ((table (make-hash-table :test 'equal)))
+        (when (slot-boundp sbom 'dependencies)
+          (loop for dep across (dependencies sbom)
+                when (and (slot-boundp dep 'ref)
+                          (ref dep)
+                          (slot-boundp dep 'depends-on)
+                          (vectorp (depends-on dep)))
+                do (let ((parent-ref (ref dep))
+                         (seen-in-dep (make-hash-table :test 'equal)))
+                     (loop for child-ref across (depends-on dep)
+                           unless (gethash child-ref seen-in-dep)
+                             do (setf (gethash child-ref seen-in-dep) t)
+                                (push parent-ref (gethash child-ref table nil))))))
+        (setf (%dependents-index sbom) table))))
+
+(defun dependents-of (sbom comp-or-ref &key transitive)
+  "Returns a list of components that depend on COMP-OR-REF in SBOM (reverse dependencies / blast radius).
+COMP-OR-REF can be a COMPONENT instance or a bom-ref string.
+If TRANSITIVE is T, transitively resolves all upstream dependents via breadth-first search.
+If a dependent ref is not present as a component in SBOM, the bom-ref string is returned."
+  (let ((target-ref (etypecase comp-or-ref
+                      (string comp-or-ref)
+                      (has-bom-ref (if (slot-boundp comp-or-ref 'bom-ref)
+                                       (bom-ref comp-or-ref)
+                                       "")))))
+    (when (or (null target-ref) (zerop (length target-ref)))
+      (return-from dependents-of nil))
+    (let ((rev-index (ensure-dependents-index sbom)))
+      (if (not transitive)
+          ;; Direct dependents
+          (let ((parent-refs (gethash target-ref rev-index)))
+            (when parent-refs
+              (let ((visited (make-hash-table :test 'equal))
+                    (result nil))
+                (dolist (ref parent-refs)
+                  (unless (gethash ref visited)
+                    (setf (gethash ref visited) t)
+                    (push (or (find-component sbom ref) ref) result)))
+                (nreverse result))))
+          ;; Transitive dependents (breadth-first search)
+          (let* ((visited (make-hash-table :test 'equal))
+                 (result nil)
+                 (queue (list target-ref))
+                 (queue-tail queue))
+            (setf (gethash target-ref visited) t)
+            (loop while queue
+                  for current-ref = (pop queue)
+                  for parent-refs = (gethash current-ref rev-index)
+                  do (dolist (parent-ref parent-refs)
+                       (unless (gethash parent-ref visited)
+                         (setf (gethash parent-ref visited) t)
+                         (push (or (find-component sbom parent-ref) parent-ref) result)
+                         (let ((new-node (list parent-ref)))
+                           (if queue
+                               (setf (cdr queue-tail) new-node
+                                     queue-tail new-node)
+                               (setf queue new-node
+                                     queue-tail new-node))))))
+            (nreverse result))))))
 
 (defun to-keyword (str)
   (when str

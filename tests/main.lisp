@@ -1783,4 +1783,148 @@
         (ok (null others))
         (ok (= total 1))))))
 
+(deftest test-dependencies-of
+  (testing "direct and transitive dependencies from sbom.json"
+    (let* ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json"))
+           (sbom (cl-sbom:parse sbom-path))
+           (apk-ref "pkg:apk/wolfi/apk-tools@2.14.10-r16?arch=aarch64&distro=wolfi-20230201&package-id=bb8200af5ed698a3")
+           (wolfi-base-ref "pkg:apk/wolfi/wolfi-base@1-r7?arch=aarch64&distro=wolfi-20230201&package-id=860ff9983d9bf8a1")
+           (ca-bundle-ref "pkg:apk/wolfi/ca-certificates-bundle@20260909-r1?arch=aarch64&distro=wolfi-20230201&package-id=dd3b0202d2da07d9&upstream=ca-certificates"))
+
+      ;; Direct dependencies of apk-tools by string ref
+      (let ((deps (cl-sbom:dependencies-of sbom apk-ref)))
+        (ok (= (length deps) 7))
+        (ok (every (lambda (c) (typep c 'cl-sbom:component)) deps))
+        (let ((names (mapcar #'cl-sbom:name deps)))
+          (ok (member "ca-certificates-bundle" names :test #'string=))
+          (ok (member "glibc-2.44" names :test #'string=))
+          (ok (member "ld-linux-2.44" names :test #'string=))
+          (ok (member "libcrypto3" names :test #'string=))
+          (ok (member "libssl3" names :test #'string=))
+          (ok (member "wolfi-baselayout" names :test #'string=))
+          (ok (member "zlib" names :test #'string=))))
+
+      ;; Direct dependencies by component instance
+      (let* ((apk-comp (cl-sbom:find-component sbom apk-ref))
+             (deps (cl-sbom:dependencies-of sbom apk-comp)))
+        (ok (typep apk-comp 'cl-sbom:component))
+        (ok (= (length deps) 7))
+        (ok (every (lambda (c) (typep c 'cl-sbom:component)) deps)))
+
+      ;; Transitive dependencies of wolfi-base (direct: 3, transitive: 20)
+      (let ((direct (cl-sbom:dependencies-of sbom wolfi-base-ref))
+            (trans (cl-sbom:dependencies-of sbom wolfi-base-ref :transitive t)))
+        (ok (= (length direct) 3))
+        (ok (= (length trans) 20))
+        (ok (every (lambda (c) (typep c 'cl-sbom:component)) trans))
+        ;; Transitive dependencies must include all direct dependencies
+        (dolist (d direct)
+          (ok (member d trans :test #'eq))))
+
+      ;; Circular dependency handling (ca-certificates-bundle <-> wolfi-baselayout)
+      (let ((ca-direct (cl-sbom:dependencies-of sbom ca-bundle-ref))
+            (ca-trans (cl-sbom:dependencies-of sbom ca-bundle-ref :transitive t)))
+        (ok (= (length ca-direct) 1))
+        (ok (= (length ca-trans) 1))
+        (ok (string= (cl-sbom:name (first ca-direct)) "wolfi-baselayout"))
+        (ok (string= (cl-sbom:name (first ca-trans)) "wolfi-baselayout")))
+
+      ;; Unknown / nonexistent ref returns NIL
+      (ok (null (cl-sbom:dependencies-of sbom "nonexistent-ref")))
+      (ok (null (cl-sbom:dependencies-of sbom "nonexistent-ref" :transitive t)))))
+
+  (testing "synthetic sbom with unresolved component ref"
+    (let* ((c1 (make-instance 'cl-sbom:component :name "app" :version "1.0.0" :type :application))
+           (c2 (make-instance 'cl-sbom:component :name "dep-lib" :version "1.0.0" :type :library))
+           (dep-entry (make-instance 'cl-sbom:dependency
+                                     :ref "app-ref"
+                                     :depends-on #("dep-ref" "dangling-external-ref")))
+           (dummy-sbom (make-instance 'cl-sbom:sbom
+                                      :components (vector c1 c2)
+                                      :dependencies (vector dep-entry))))
+      (setf (cl-sbom:bom-ref c1) "app-ref")
+      (setf (cl-sbom:bom-ref c2) "dep-ref")
+
+      ;; Direct dependencies resolves c2 to component, and keeps dangling-external-ref as string
+      (let ((deps (cl-sbom:dependencies-of dummy-sbom c1)))
+        (ok (= (length deps) 2))
+        (ok (eq (first deps) c2))
+        (ok (string= (second deps) "dangling-external-ref")))
+
+      ;; Ref string works as well
+      (let ((deps (cl-sbom:dependencies-of dummy-sbom "app-ref")))
+        (ok (= (length deps) 2))
+        (ok (eq (first deps) c2))
+        (ok (string= (second deps) "dangling-external-ref"))))))
+
+(deftest test-dependents-of
+  (testing "direct and transitive dependents (blast radius) from sbom.json"
+    (let* ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json"))
+           (sbom (cl-sbom:parse sbom-path))
+           (z-ref "pkg:apk/wolfi/zlib@1.3.2.1_rc20260601-r0?arch=aarch64&distro=wolfi-20230201&package-id=50a856ba27cac15a")
+           (wolfi-base-ref "pkg:apk/wolfi/wolfi-base@1-r7?arch=aarch64&distro=wolfi-20230201&package-id=860ff9983d9bf8a1")
+           (ca-bundle-ref "pkg:apk/wolfi/ca-certificates-bundle@20260909-r1?arch=aarch64&distro=wolfi-20230201&package-id=dd3b0202d2da07d9&upstream=ca-certificates"))
+
+      ;; Direct dependents of zlib by string ref (6 packages)
+      (let ((dependents (cl-sbom:dependents-of sbom z-ref)))
+        (ok (= (length dependents) 6))
+        (ok (every (lambda (c) (typep c 'cl-sbom:component)) dependents))
+        (let ((names (mapcar #'cl-sbom:name dependents)))
+          (ok (member "apk-tools" names :test #'string=))
+          (ok (member "binutils" names :test #'string=))
+          (ok (member "curl" names :test #'string=))
+          (ok (member "gcc" names :test #'string=))
+          (ok (member "git" names :test #'string=))
+          (ok (member "libcurl-openssl4" names :test #'string=))))
+
+      ;; Direct dependents by component instance
+      (let* ((z-comp (cl-sbom:find-component sbom z-ref))
+             (dependents (cl-sbom:dependents-of sbom z-comp)))
+        (ok (typep z-comp 'cl-sbom:component))
+        (ok (= (length dependents) 6))
+        (ok (every (lambda (c) (typep c 'cl-sbom:component)) dependents)))
+
+      ;; Transitive dependents of zlib (direct: 6, transitive: 7, adds wolfi-base via apk-tools)
+      (let ((direct (cl-sbom:dependents-of sbom z-ref))
+            (trans (cl-sbom:dependents-of sbom z-ref :transitive t)))
+        (ok (= (length direct) 6))
+        (ok (= (length trans) 7))
+        (ok (every (lambda (c) (typep c 'cl-sbom:component)) trans))
+        ;; Transitive dependents include all direct dependents
+        (dolist (d direct)
+          (ok (member d trans :test #'eq)))
+        ;; And wolfi-base is included as indirect dependent
+        (ok (member "wolfi-base" (mapcar #'cl-sbom:name trans) :test #'string=)))
+
+      ;; Component with no dependents returns NIL
+      (ok (null (cl-sbom:dependents-of sbom wolfi-base-ref)))
+      (ok (null (cl-sbom:dependents-of sbom wolfi-base-ref :transitive t)))
+
+      ;; Circular dependency handling (ca-certificates-bundle <-> wolfi-baselayout)
+      (let ((ca-direct (cl-sbom:dependents-of sbom ca-bundle-ref))
+            (ca-trans (cl-sbom:dependents-of sbom ca-bundle-ref :transitive t)))
+        (ok (plusp (length ca-direct)))
+        (ok (plusp (length ca-trans))))
+
+      ;; Unknown / nonexistent ref returns NIL
+      (ok (null (cl-sbom:dependents-of sbom "nonexistent-ref")))
+      (ok (null (cl-sbom:dependents-of sbom "nonexistent-ref" :transitive t)))))
+
+  (testing "synthetic sbom with dangling dependent ref"
+    (let* ((c1 (make-instance 'cl-sbom:component :name "app" :version "1.0.0" :type :application))
+           (dep-entry (make-instance 'cl-sbom:dependency
+                                     :ref "dangling-parent-ref"
+                                     :depends-on #("app-ref")))
+           (dummy-sbom (make-instance 'cl-sbom:sbom
+                                      :components (vector c1)
+                                      :dependencies (vector dep-entry))))
+      (setf (cl-sbom:bom-ref c1) "app-ref")
+
+      ;; Direct dependents returns the dangling-parent-ref as string
+      (let ((deps (cl-sbom:dependents-of dummy-sbom c1)))
+        (ok (= (length deps) 1))
+        (ok (string= (first deps) "dangling-parent-ref"))))))
+
+
+
 

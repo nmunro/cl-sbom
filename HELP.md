@@ -121,30 +121,30 @@ CycloneDX SBOMs specify top-level format parameters:
 - `bomFormat`: Expected to be the exact string `"CycloneDX"`.
 - `specVersion`: Expected to be the exact string `"1.7"`.
 
-If an input document contains missing or unsupported formats (such as `"SPDX"` or older versions like `"1.5"` / `"1.6"`), [`build-sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L780-L799) signals specialized conditions.
+If an input document contains missing or unsupported formats (such as `"SPDX"` or older versions like `"1.5"` / `"1.6"`), [`build-sbom`](src/cyclonedx-1.7/main.lisp#L780-L799) signals specialized conditions.
 
 ### CLOS Object Model & Typed Slots
 Every schema entity maps to a CLOS class with explicit `:type` declarations. JSON arrays map directly to Common Lisp vectors `(vector ...)` for memory compactness and fast indexed access. Missing optional collections default to empty vectors `#()`.
 
 ### Deduplication Mixins
 In the CycloneDX 1.7 specification, multiple distinct entities share metadata capabilities:
-* [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L201-L202): Provides slot `bom-ref :accessor bom-ref :type string`. Mixed into [`address`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L207-L213), [`organizational-contact`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L215-L218), [`organizational-entity`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L220-L224), [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L311-L323), [`vulnerability`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L357-L373), [`license`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L249-L255), and [`license-expression`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L262-L266).
-* [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205): Provides slot `properties :accessor properties :type (vector property)`. Mixed into [`sbom-metadata`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L379-L386), [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L311-L323), [`vulnerability`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L357-L373), [`external-reference`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L277-L281), [`license`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L249-L255), and [`license-expression`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L262-L266).
+* [`has-bom-ref`](src/cyclonedx-1.7/main.lisp#L201-L202): Provides slot `bom-ref :accessor bom-ref :type string`. Mixed into [`address`](src/cyclonedx-1.7/main.lisp#L207-L213), [`organizational-contact`](src/cyclonedx-1.7/main.lisp#L215-L218), [`organizational-entity`](src/cyclonedx-1.7/main.lisp#L220-L224), [`component`](src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](src/cyclonedx-1.7/main.lisp#L311-L323), [`vulnerability`](src/cyclonedx-1.7/main.lisp#L357-L373), [`license`](src/cyclonedx-1.7/main.lisp#L249-L255), and [`license-expression`](src/cyclonedx-1.7/main.lisp#L262-L266).
+* [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205): Provides slot `properties :accessor properties :type (vector property)`. Mixed into [`sbom-metadata`](src/cyclonedx-1.7/main.lisp#L379-L386), [`component`](src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](src/cyclonedx-1.7/main.lisp#L311-L323), [`vulnerability`](src/cyclonedx-1.7/main.lisp#L357-L373), [`external-reference`](src/cyclonedx-1.7/main.lisp#L277-L281), [`license`](src/cyclonedx-1.7/main.lisp#L249-L255), and [`license-expression`](src/cyclonedx-1.7/main.lisp#L262-L266).
 
 ### Polymorphic Tool & License Accessors
-* **Tools Access**: CycloneDX tools can be defined as components or services inside `metadata -> tools`. `cl-sbom` defines generic functions [`tool-components`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L401-L435) and [`tool-services`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L404-L437) specialized for [`tools`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L375-L377), [`sbom-metadata`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L379-L386), [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399), and `nil` (returning `#()`).
-* **License Acknowledgement**: Both [`license`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L249-L255) and [`license-expression`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L262-L266) implement generic function [`acknowledge`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L268-L275) for convenience.
+* **Tools Access**: CycloneDX tools can be defined as components or services inside `metadata -> tools`. `cl-sbom` defines generic functions [`tool-components`](src/cyclonedx-1.7/main.lisp#L401-L435) and [`tool-services`](src/cyclonedx-1.7/main.lisp#L404-L437) specialized for [`tools`](src/cyclonedx-1.7/main.lisp#L375-L377), [`sbom-metadata`](src/cyclonedx-1.7/main.lisp#L379-L386), [`sbom`](src/cyclonedx-1.7/main.lisp#L388-L399), and `nil` (returning `#()`).
+* **License Acknowledgement**: Both [`license`](src/cyclonedx-1.7/main.lisp#L249-L255) and [`license-expression`](src/cyclonedx-1.7/main.lisp#L262-L266) implement generic function [`acknowledge`](src/cyclonedx-1.7/main.lisp#L268-L275) for convenience.
 
 ### Package Organization
-* [`cl-sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L1-L12): High-level consumer interface.
-* [`cl-sbom/cyclonedx-1.7`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L1-L178): Complete CLOS models, accessors, and builder functions.
-* [`cl-sbom/cyclonedx-1.7/enums`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L1-L16): Deftype enumerations for CycloneDX types, algorithms, scopes, licenses, references, and severities.
+* [`cl-sbom`](src/main.lisp#L1-L12): High-level consumer interface.
+* [`cl-sbom/cyclonedx-1.7`](src/cyclonedx-1.7/main.lisp#L1-L178): Complete CLOS models, accessors, and builder functions.
+* [`cl-sbom/cyclonedx-1.7/enums`](src/cyclonedx-1.7/enums.lisp#L1-L16): Deftype enumerations for CycloneDX types, algorithms, scopes, licenses, references, and severities.
 
 ---
 
 ## Error Handling & Conditions
 
-All errors signaled by `cl-sbom` inherit from [`sbom-error`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L182-L184).
+All errors signaled by `cl-sbom` inherit from [`sbom-error`](src/cyclonedx-1.7/main.lisp#L182-L184).
 
 ```
    error
@@ -155,18 +155,18 @@ All errors signaled by `cl-sbom` inherit from [`sbom-error`](file:///Users/nmunr
 
 ### Condition Definitions
 
-#### [`sbom-error`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L182-L184)
+#### [`sbom-error`](src/cyclonedx-1.7/main.lisp#L182-L184)
 * **Inherits from:** `error`
 * **Description:** Base condition class for all parsing and validation failures in `cl-sbom`.
 
-#### [`unsupported-bom-format`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L186-L191)
-* **Inherits from:** [`sbom-error`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L182-L184)
+#### [`unsupported-bom-format`](src/cyclonedx-1.7/main.lisp#L186-L191)
+* **Inherits from:** [`sbom-error`](src/cyclonedx-1.7/main.lisp#L182-L184)
 * **Slot / Reader:** `bom-format` (initarg `:bom-format` or `:format`)
 * **Report:** `"Unsupported or missing bomFormat: <FORMAT> (expected \"CycloneDX\")"`
 * **When signaled:** When the root JSON object lacks `"bomFormat"` or specifies any value other than `"CycloneDX"`.
 
-#### [`unsupported-spec-version`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L193-L198)
-* **Inherits from:** [`sbom-error`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L182-L184)
+#### [`unsupported-spec-version`](src/cyclonedx-1.7/main.lisp#L193-L198)
+* **Inherits from:** [`sbom-error`](src/cyclonedx-1.7/main.lisp#L182-L184)
 * **Slot / Reader:** `spec-version` (initarg `:spec-version` or `:version`)
 * **Report:** `"Unsupported or missing specVersion: <VERSION> (expected \"1.7\")"`
 * **When signaled:** When the root JSON object lacks `"specVersion"` or specifies any value other than `"1.7"`.
@@ -188,50 +188,68 @@ All errors signaled by `cl-sbom` inherit from [`sbom-error`](file:///Users/nmunr
 
 ## API Reference: Package `cl-sbom`
 
-The top-level package [`cl-sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L1-L200) serves as the primary developer-facing interface. It defines the main loader function [`parse`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L182-L194) and re-exports all CLOS models, slot accessors, mixins, generic functions, conditions, and enums.
+The top-level package [`cl-sbom`](src/main.lisp#L1-L200) serves as the primary developer-facing interface. It defines the main loader function [`parse`](src/main.lisp#L182-L194) and re-exports all CLOS models, slot accessors, mixins, generic functions, conditions, and enums.
 
 Because `cl-sbom` avoids name conflicts with `COMMON-LISP`, downstream packages can simply `(:use :cl :cl-sbom)` without requiring any shadowing imports.
 
 ### Functions
 
 #### `(parse path &key (format :cyclonedx-1.7))`
-* **File:** [src/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L182-L194)
+* **File:** [src/main.lisp](src/main.lisp#L182-L194)
 * **Arguments:**
   - `path`: Pathname designator (string or pathname) or an open input stream containing the SBOM JSON.
   - `:format`: Format keyword designator (defaults to `:cyclonedx-1.7`). Supported values: `:cyclonedx-1.7`, `:cyclonedx`.
-* **Returns:** An instance of [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399).
+* **Returns:** An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L388-L399).
 * **Signals:**
-  - [`unsupported-bom-format`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L186-L191) if `:format` is not `:cyclonedx-1.7`/`:cyclonedx`, or if the document's `"bomFormat"` is not `"CycloneDX"`.
-  - [`unsupported-spec-version`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L193-L198) if the document's `"specVersion"` is not `"1.7"`.
+  - [`unsupported-bom-format`](src/cyclonedx-1.7/main.lisp#L186-L191) if `:format` is not `:cyclonedx-1.7`/`:cyclonedx`, or if the document's `"bomFormat"` is not `"CycloneDX"`.
+  - [`unsupported-spec-version`](src/cyclonedx-1.7/main.lisp#L193-L198) if the document's `"specVersion"` is not `"1.7"`.
 
 #### `(find-component sbom target &key (key #'bom-ref) (test #'string=))`
-* **File:** [src/cyclonedx-1.7/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L547-L568)
+* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L547-L568)
 * **Arguments:**
-  - `sbom`: An instance of [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399).
+  - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L388-L399).
   - `target`: The search value to match against (e.g. a `bom-ref` string, package name, or PURL).
   - `:key`: Function designator extracting the comparison value from each component (defaults to `#'bom-ref`).
   - `:test`: Equality/comparison function designator (defaults to `#'string=`).
 * **Returns:** Multiple values `(values primary-match remaining-matches total-count)`:
-  1. `primary-match`: The first matching [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304) instance, or `nil` if not found.
-  2. `remaining-matches`: A list of any additional matching [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304) instances, or `nil` if unique or no match.
+  1. `primary-match`: The first matching [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instance, or `nil` if not found.
+  2. `remaining-matches`: A list of any additional matching [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instances, or `nil` if unique or no match.
   3. `total-count`: Integer total count of matching components.
 * **Performance:**
   - When querying by `bom-ref` (the default `:key #'bom-ref` with `:test #'string=`), lookups use a cached hash-table index for $O(1)$ fast retrieval.
   - When querying with arbitrary keys or tests, it searches across all components in the document (including root metadata components, tool components, and nested subcomponents).
 
-#### `(all-components sbom)`
-* **File:** [src/cyclonedx-1.7/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L510-L536)
+#### `(dependencies-of sbom comp-or-ref &key transitive)`
+* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L590-L638)
 * **Arguments:**
-  - `sbom`: An instance of [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399).
-* **Returns:** A flat list of all [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304) instances present in the SBOM document, traversing root metadata components, tool components, top-level components, and all recursively nested subcomponents.
+  - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L390-L405).
+  - `comp-or-ref`: A [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instance or a `bom-ref` string.
+  - `:transitive`: Boolean flag (defaults to `nil`). When `t`, recursively resolves all downstream transitive dependencies in breadth-first order while preventing infinite loops on circular dependencies.
+* **Returns:** A list of [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instances (or unresolved `bom-ref` strings if a referenced dependency is not present in the SBOM components list).
+* **Performance:** Uses a cached hash-table index (`%dependency-index`) for $O(1)$ fast dependency entry lookup.
+
+#### `(dependents-of sbom comp-or-ref &key transitive)`
+* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L660-L703)
+* **Arguments:**
+  - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L390-L405).
+  - `comp-or-ref`: A [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instance or a `bom-ref` string.
+  - `:transitive`: Boolean flag (defaults to `nil`). When `t`, recursively resolves all upstream dependents (blast radius) in breadth-first order while preventing infinite loops on circular dependencies.
+* **Returns:** A list of [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instances (or unresolved `bom-ref` strings if a dependent is not present in the SBOM components list).
+* **Performance:** Uses a cached reverse index (`%dependents-index`) for $O(1)$ fast parent lookup.
+
+#### `(all-components sbom)`
+* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L518-L544)
+* **Arguments:**
+  - `sbom`: An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L390-L405).
+* **Returns:** A flat list of all [`component`](src/cyclonedx-1.7/main.lisp#L283-L304) instances present in the SBOM document, traversing root metadata components, tool components, top-level components, and all recursively nested subcomponents.
 
 ### Re-exported Symbols
-The package [`cl-sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L1-L200) re-exports:
-* **Core Functions:** [`parse`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.lisp#L182-L194), [`find-component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L547-L568), [`all-components`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L510-L536).
-* **All Models:** [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399), [`sbom-metadata`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L379-L386), [`tools`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L375-L377), [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L311-L323), [`dependency`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L306-L309), [`external-reference`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L277-L281), [`vulnerability`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L357-L373), and sub-models ([`vulnerability-source`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L325-L327), [`vulnerability-rating`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L333-L339), etc.).
-* **All Accessors & Mixins:** [`components`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L395), [`dependencies`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L398), [`vulnerabilities`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L399), [`services`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L396), [`metadata`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L394), [`name`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L292), [`version`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L293), [`purl`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L302), [`bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L202), [`properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L205), [`tool-components`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L401-L435), [`tool-services`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L404-L437), [`acknowledge`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L268-L275).
-* **All Conditions:** [`sbom-error`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L182-L184), [`unsupported-bom-format`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L186-L191), [`unsupported-spec-version`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L193-L198).
-* **All Enums:** [`component-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L23-L37), [`scope-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L39-L43), [`algorithm-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L45-L60), [`license-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L71-L88), [`licence-id-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L90-L917), [`external-reference-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L919-L967), [`severity-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L969-L977), [`score-method-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L979-L987), [`impact-analysis-state`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L989-L996), [`impact-analysis-justification`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L998-L1008).
+The package [`cl-sbom`](src/main.lisp#L1-L200) re-exports:
+* **Core Functions:** [`parse`](src/main.lisp#L182-L194), [`find-component`](src/cyclonedx-1.7/main.lisp#L556-L578), [`all-components`](src/cyclonedx-1.7/main.lisp#L518-L544), [`dependencies-of`](src/cyclonedx-1.7/main.lisp#L590-L638), [`dependents-of`](src/cyclonedx-1.7/main.lisp#L660-L703).
+* **All Models:** [`sbom`](src/cyclonedx-1.7/main.lisp#L388-L399), [`sbom-metadata`](src/cyclonedx-1.7/main.lisp#L379-L386), [`tools`](src/cyclonedx-1.7/main.lisp#L375-L377), [`component`](src/cyclonedx-1.7/main.lisp#L283-L304), [`service`](src/cyclonedx-1.7/main.lisp#L311-L323), [`dependency`](src/cyclonedx-1.7/main.lisp#L306-L309), [`external-reference`](src/cyclonedx-1.7/main.lisp#L277-L281), [`vulnerability`](src/cyclonedx-1.7/main.lisp#L357-L373), and sub-models ([`vulnerability-source`](src/cyclonedx-1.7/main.lisp#L325-L327), [`vulnerability-rating`](src/cyclonedx-1.7/main.lisp#L333-L339), etc.).
+* **All Accessors & Mixins:** [`components`](src/cyclonedx-1.7/main.lisp#L395), [`dependencies`](src/cyclonedx-1.7/main.lisp#L398), [`vulnerabilities`](src/cyclonedx-1.7/main.lisp#L399), [`services`](src/cyclonedx-1.7/main.lisp#L396), [`metadata`](src/cyclonedx-1.7/main.lisp#L394), [`name`](src/cyclonedx-1.7/main.lisp#L292), [`version`](src/cyclonedx-1.7/main.lisp#L293), [`purl`](src/cyclonedx-1.7/main.lisp#L302), [`bom-ref`](src/cyclonedx-1.7/main.lisp#L202), [`properties`](src/cyclonedx-1.7/main.lisp#L205), [`tool-components`](src/cyclonedx-1.7/main.lisp#L401-L435), [`tool-services`](src/cyclonedx-1.7/main.lisp#L404-L437), [`acknowledge`](src/cyclonedx-1.7/main.lisp#L268-L275).
+* **All Conditions:** [`sbom-error`](src/cyclonedx-1.7/main.lisp#L182-L184), [`unsupported-bom-format`](src/cyclonedx-1.7/main.lisp#L186-L191), [`unsupported-spec-version`](src/cyclonedx-1.7/main.lisp#L193-L198).
+* **All Enums:** [`component-type`](src/cyclonedx-1.7/enums.lisp#L23-L37), [`scope-type`](src/cyclonedx-1.7/enums.lisp#L39-L43), [`algorithm-type`](src/cyclonedx-1.7/enums.lisp#L45-L60), [`license-type`](src/cyclonedx-1.7/enums.lisp#L71-L88), [`licence-id-type`](src/cyclonedx-1.7/enums.lisp#L90-L917), [`external-reference-type`](src/cyclonedx-1.7/enums.lisp#L919-L967), [`severity-type`](src/cyclonedx-1.7/enums.lisp#L969-L977), [`score-method-type`](src/cyclonedx-1.7/enums.lisp#L979-L987), [`impact-analysis-state`](src/cyclonedx-1.7/enums.lisp#L989-L996), [`impact-analysis-justification`](src/cyclonedx-1.7/enums.lisp#L998-L1008).
 
 ---
 
@@ -239,13 +257,13 @@ The package [`cl-sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/main.li
 
 ### Root Document Model: `sbom`
 
-#### Class [`sbom`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L388-L399)
+#### Class [`sbom`](src/cyclonedx-1.7/main.lisp#L388-L399)
 Root container representing a CycloneDX 1.7 SBOM.
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
 | `schema` | `:schema` | `string` | `""` | `schema` | URI of the CycloneDX JSON schema (`$schema`). |
-| `bom-format` | `:bom-format` | [`bom-format-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L19-L21) | `:CycloneDX` | `bom-format` | Always `:CycloneDX`. |
+| `bom-format` | `:bom-format` | [`bom-format-type`](src/cyclonedx-1.7/enums.lisp#L19-L21) | `:CycloneDX` | `bom-format` | Always `:CycloneDX`. |
 | `spec-version` | `:spec-version` | `string` | `""` | `spec-version` | CycloneDX specification version string (e.g. `"1.7"`). |
 | `serial-number` | `:serial-number` | `string` | `""` | `serial-number` | Unique URN UUID serial number for this BOM. |
 | `version` | `:version` | `integer` | `1` | `version` | Integer document version sequence. |
@@ -260,8 +278,8 @@ Root container representing a CycloneDX 1.7 SBOM.
 
 ### Metadata & Tools: `sbom-metadata`, `tools`
 
-#### Class [`sbom-metadata`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L379-L386)
-Inherits: [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205).
+#### Class [`sbom-metadata`](src/cyclonedx-1.7/main.lisp#L379-L386)
+Inherits: [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205).
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
@@ -274,7 +292,7 @@ Inherits: [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cy
 | `licenses` | `:licenses` | `(vector (or license license-expression))` | `#()` | `licenses` | Licenses governing the BOM metadata itself. |
 | `properties` | `:properties` | `(vector property)` | `#()` | `properties` | Name-value property pairs. |
 
-#### Class [`tools`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L375-L377)
+#### Class [`tools`](src/cyclonedx-1.7/main.lisp#L375-L377)
 Represents the tools used to create the SBOM.
 
 | Slot | Initarg | Type | Default | Accessor | Description |
@@ -286,14 +304,14 @@ Represents the tools used to create the SBOM.
 
 ### Components: `component`
 
-#### Class [`component`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L283-L304)
-Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205).
+#### Class [`component`](src/cyclonedx-1.7/main.lisp#L283-L304)
+Inherits: [`has-bom-ref`](src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205).
 Prints formatted as `#<COMPONENT Name: <name>, Type: <type> {identity}>`.
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
 | `bom-ref` | `:bom-ref` | `string` | `""` | `bom-ref` | Unique reference key for graph cross-referencing. |
-| `component-type` | `:type` | [`component-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L23-L37) | *(required)* | `component-type` | Type keyword (`:library`, `:container`, etc.). |
+| `component-type` | `:type` | [`component-type`](src/cyclonedx-1.7/enums.lisp#L23-L37) | *(required)* | `component-type` | Type keyword (`:library`, `:container`, etc.). |
 | `mime-type` | `:mime-type` | `string` | `""` | `mime-type` | Media type of the component. |
 | `supplier` | `:supplier` | `(or null organizational-entity)` | `nil` | `supplier` | Supplying organization. |
 | `manufacturer` | `:manufacturer` | `(or null organizational-entity)` | `nil` | `manufacturer` | Manufacturing organization. |
@@ -320,9 +338,9 @@ Prints formatted as `#<COMPONENT Name: <name>, Type: <type> {identity}>`.
 
 ### Services: `service`
 
-#### Class [`service`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L311-L323)
+#### Class [`service`](src/cyclonedx-1.7/main.lisp#L311-L323)
 Represents cloud, network, microservice, or API endpoints.
-Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205).
+Inherits: [`has-bom-ref`](src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205).
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
@@ -345,7 +363,7 @@ Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclo
 
 ### Dependency Graph: `dependency`
 
-#### Class [`dependency`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L306-L309)
+#### Class [`dependency`](src/cyclonedx-1.7/main.lisp#L306-L309)
 Represents a node in the CycloneDX direct dependency graph.
 Prints formatted as `#<DEPENDENCY Ref: <ref>, Depends-On: <count>, Provides: <count> {identity}>`.
 
@@ -359,9 +377,9 @@ Prints formatted as `#<DEPENDENCY Ref: <ref>, Depends-On: <count>, Provides: <co
 
 ### External References: `external-reference`
 
-#### Class [`external-reference`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L277-L281)
+#### Class [`external-reference`](src/cyclonedx-1.7/main.lisp#L277-L281)
 Links to external resources (documentation, VCS repos, issue trackers, audit logs).
-Inherits: [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205).
+Inherits: [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205).
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
@@ -375,8 +393,8 @@ Inherits: [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cy
 
 ### Vulnerabilities & Advisories
 
-#### Class [`vulnerability`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L357-L373)
-Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205).
+#### Class [`vulnerability`](src/cyclonedx-1.7/main.lisp#L357-L373)
+Inherits: [`has-bom-ref`](src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205).
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
@@ -399,22 +417,22 @@ Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclo
 | `affects` | `:affects` | `(vector vulnerability-target)` | `#()` | `affects` | List of affected components and version specs. |
 
 #### Sub-models:
-* **[`vulnerability-source`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L325-L327)**: Slots `name :type string`, `url :type string`.
-* **[`vulnerability-reference`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L329-L331)**: Slots `id :type string`, `source :type (or null vulnerability-source)`.
-* **[`vulnerability-rating`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L333-L339)**:
+* **[`vulnerability-source`](src/cyclonedx-1.7/main.lisp#L325-L327)**: Slots `name :type string`, `url :type string`.
+* **[`vulnerability-reference`](src/cyclonedx-1.7/main.lisp#L329-L331)**: Slots `id :type string`, `source :type (or null vulnerability-source)`.
+* **[`vulnerability-rating`](src/cyclonedx-1.7/main.lisp#L333-L339)**:
   - `source :accessor source`
   - `score :accessor score :type (or null number)` (e.g. `9.8`)
   - `severity :accessor severity :type (or null severity-type string)` (`:critical`, `:high`, `:medium`, `:low`, `:info`, `:none`, `:unknown`)
   - `score-method :accessor score-method :initarg :method :type (or null score-method-type string)` (`:CVSSv2`, `:CVSSv3`, `:CVSSv31`, `:CVSSv4`, `:OWASP`, `:SSVC`, `:other`)
   - `score-vector :accessor score-vector :initarg :vector :type string` (CVSS vector string)
   - `justification :accessor justification :type string`
-* **[`vulnerability-advisory`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L341-L343)**: Slots `title :type string`, `url :type string`.
-* **[`vulnerability-analysis`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L345-L351)**:
+* **[`vulnerability-advisory`](src/cyclonedx-1.7/main.lisp#L341-L343)**: Slots `title :type string`, `url :type string`.
+* **[`vulnerability-analysis`](src/cyclonedx-1.7/main.lisp#L345-L351)**:
   - `state :type (or null impact-analysis-state string)` (`:resolved`, `:exploitable`, `:in_triage`, `:false_positive`, `:not_affected`, etc.)
   - `justification :type (or null impact-analysis-justification string)` (`:code_not_present`, `:code_not_reachable`, etc.)
   - `response :type (vector string)`
   - `detail :type string`, `first-issued :type string`, `last-updated :type string`
-* **[`vulnerability-target`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L353-L355)**:
+* **[`vulnerability-target`](src/cyclonedx-1.7/main.lisp#L353-L355)**:
   - `ref :type string` (`bom-ref` of affected component)
   - `versions :type vector` (version range or exact version objects)
 
@@ -422,9 +440,9 @@ Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclo
 
 ### Licenses & Legal: `license`, `license-expression`
 
-#### Class [`license`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L249-L255)
+#### Class [`license`](src/cyclonedx-1.7/main.lisp#L249-L255)
 Represents a discrete license choice.
-Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205).
+Inherits: [`has-bom-ref`](src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205).
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
@@ -435,9 +453,9 @@ Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclo
 | `url` | `:url` | `string` | `""` | `url` | License web link. |
 | `licensing` | `:licensing` | `(or null licensing)` | `nil` | `licensing` | Commercial licensing metadata. |
 
-#### Class [`license-expression`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L262-L266)
+#### Class [`license-expression`](src/cyclonedx-1.7/main.lisp#L262-L266)
 Represents compound SPDX license expressions (e.g. `"MIT OR Apache-2.0"`).
-Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L204-L205).
+Inherits: [`has-bom-ref`](src/cyclonedx-1.7/main.lisp#L201-L202), [`has-properties`](src/cyclonedx-1.7/main.lisp#L204-L205).
 
 | Slot | Initarg | Type | Default | Accessor | Description |
 |---|---|---|---|---|---|
@@ -450,34 +468,34 @@ Inherits: [`has-bom-ref`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclo
 
 ### Common Entities
 
-#### [`property`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L230-L232)
+#### [`property`](src/cyclonedx-1.7/main.lisp#L230-L232)
 Key-value pair metadata.
 - `name :accessor name :type string` *(required)*
 - `value :accessor value :type string` (default: `""`)
 
-#### [`hash`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L226-L228)
+#### [`hash`](src/cyclonedx-1.7/main.lisp#L226-L228)
 Cryptographic checksum.
 - `alg :accessor alg :type algorithm-type` (`:SHA-256`, `:SHA-1`, `:MD5`, etc.)
 - `content :accessor content :type string`
 
-#### [`attachment`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L234-L237)
+#### [`attachment`](src/cyclonedx-1.7/main.lisp#L234-L237)
 Embedded text or binary content.
 - `content-type :accessor content-type :type string` (default: `"text/plain"`)
 - `encoding :accessor encoding :type (or null encoding-type string)` (`:base64` or `nil`)
 - `content :accessor content :type string` *(required)*
 
-#### [`organizational-contact`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L215-L218)
+#### [`organizational-contact`](src/cyclonedx-1.7/main.lisp#L215-L218)
 - `name :accessor name :type string`
 - `email :accessor email :type string`
 - `phone :accessor phone :type string`
 
-#### [`organizational-entity`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L220-L224)
+#### [`organizational-entity`](src/cyclonedx-1.7/main.lisp#L220-L224)
 - `name :accessor name :type string`
 - `address :accessor address :type (or null address)`
 - `url :accessor url :type (vector string)`
 - `contact :accessor contact :type (vector organizational-contact)`
 
-#### [`address`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L207-L213)
+#### [`address`](src/cyclonedx-1.7/main.lisp#L207-L213)
 - `country`, `region`, `locality`, `post-office-box-number`, `postal-code`, `street-address` (all `string`).
 
 ---
@@ -485,7 +503,7 @@ Embedded text or binary content.
 ### Mixins & Generic Functions
 
 #### Generic Function `(tool-components object)`
-* **File:** [src/cyclonedx-1.7/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L401-L435)
+* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L401-L435)
 * **Methods:**
   - `(tools tools)`: Returns `(components tools)`.
   - `(meta sbom-metadata)`: Returns tool components if `tools` is present, or `#()`.
@@ -493,7 +511,7 @@ Embedded text or binary content.
   - `(obj null)`: Returns `#()`.
 
 #### Generic Function `(tool-services object)`
-* **File:** [src/cyclonedx-1.7/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L404-L437)
+* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L404-L437)
 * **Methods:**
   - `(tools tools)`: Returns `(services tools)`.
   - `(meta sbom-metadata)`: Returns tool services if `tools` is present, or `#()`.
@@ -501,7 +519,7 @@ Embedded text or binary content.
   - `(obj null)`: Returns `#()`.
 
 #### Generic Function `(acknowledge object)`
-* **File:** [src/cyclonedx-1.7/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L268-L275)
+* **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L268-L275)
 * **Methods:**
   - `(lic license)`: Returns `(acknowledgement lic)`.
   - `(expr license-expression)`: Returns `(acknowledgement expr)`.
@@ -512,53 +530,53 @@ Embedded text or binary content.
 
 The package provides explicit builder functions transforming parsed hash-table structures into CLOS objects:
 
-* [`build-sbom (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L780-L799)
-* [`build-metadata (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L763-L778)
-* [`build-tools (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L757-L761)
-* [`build-component (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L720-L750)
-* [`build-components (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L752-L755)
-* [`build-service (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L611-L627)
-* [`build-services (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L629-L632)
-* [`build-dependency (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L600-L604)
-* [`build-dependencies (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L606-L609)
-* [`build-external-reference (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L584-L593)
-* [`build-external-references (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L595-L598)
-* [`build-vulnerability (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L686-L713)
-* [`build-vulnerabilities (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L715-L718)
-* [`build-vulnerability-source (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L634-L638)
-* [`build-vulnerability-reference (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L640-L643)
-* [`build-vulnerability-rating (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L645-L658)
-* [`build-vulnerability-advisory (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L660-L663)
-* [`build-vulnerability-analysis (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L665-L679)
-* [`build-vulnerability-target (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L681-L684)
-* [`build-license (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L544-L561)
-* [`build-licenses (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L579-L582)
-* [`build-hash (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L462-L465)
-* [`build-hashes (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L467-L470)
-* [`build-property (data)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L452-L455)
-* [`build-properties (vec)`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/main.lisp#L457-L460)
+* [`build-sbom (data)`](src/cyclonedx-1.7/main.lisp#L780-L799)
+* [`build-metadata (data)`](src/cyclonedx-1.7/main.lisp#L763-L778)
+* [`build-tools (data)`](src/cyclonedx-1.7/main.lisp#L757-L761)
+* [`build-component (data)`](src/cyclonedx-1.7/main.lisp#L720-L750)
+* [`build-components (vec)`](src/cyclonedx-1.7/main.lisp#L752-L755)
+* [`build-service (data)`](src/cyclonedx-1.7/main.lisp#L611-L627)
+* [`build-services (vec)`](src/cyclonedx-1.7/main.lisp#L629-L632)
+* [`build-dependency (data)`](src/cyclonedx-1.7/main.lisp#L600-L604)
+* [`build-dependencies (vec)`](src/cyclonedx-1.7/main.lisp#L606-L609)
+* [`build-external-reference (data)`](src/cyclonedx-1.7/main.lisp#L584-L593)
+* [`build-external-references (vec)`](src/cyclonedx-1.7/main.lisp#L595-L598)
+* [`build-vulnerability (data)`](src/cyclonedx-1.7/main.lisp#L686-L713)
+* [`build-vulnerabilities (vec)`](src/cyclonedx-1.7/main.lisp#L715-L718)
+* [`build-vulnerability-source (data)`](src/cyclonedx-1.7/main.lisp#L634-L638)
+* [`build-vulnerability-reference (data)`](src/cyclonedx-1.7/main.lisp#L640-L643)
+* [`build-vulnerability-rating (data)`](src/cyclonedx-1.7/main.lisp#L645-L658)
+* [`build-vulnerability-advisory (data)`](src/cyclonedx-1.7/main.lisp#L660-L663)
+* [`build-vulnerability-analysis (data)`](src/cyclonedx-1.7/main.lisp#L665-L679)
+* [`build-vulnerability-target (data)`](src/cyclonedx-1.7/main.lisp#L681-L684)
+* [`build-license (data)`](src/cyclonedx-1.7/main.lisp#L544-L561)
+* [`build-licenses (vec)`](src/cyclonedx-1.7/main.lisp#L579-L582)
+* [`build-hash (data)`](src/cyclonedx-1.7/main.lisp#L462-L465)
+* [`build-hashes (vec)`](src/cyclonedx-1.7/main.lisp#L467-L470)
+* [`build-property (data)`](src/cyclonedx-1.7/main.lisp#L452-L455)
+* [`build-properties (vec)`](src/cyclonedx-1.7/main.lisp#L457-L460)
 
 ---
 
 ## API Reference: Package `cl-sbom/cyclonedx-1.7/enums`
 
-The [`enums.lisp`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp) file exports all member types specified by CycloneDX 1.7:
+The [`enums.lisp`](src/cyclonedx-1.7/enums.lisp) file exports all member types specified by CycloneDX 1.7:
 
 | Type Name | Defined Values / Description | File Link |
 |---|---|---|
-| [`bom-format-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L19-L21) | `:CycloneDX` | [enums.lisp#L19](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L19-L21) |
-| [`component-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L23-L37) | `:application`, `:framework`, `:library`, `:container`, `:platform`, `:operating-system`, `:device`, `:device-driver`, `:firmware`, `:file`, `:machine-learning-model`, `:data`, `:cryptographic-asset` | [enums.lisp#L23](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L23-L37) |
-| [`scope-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L39-L43) | `:required`, `:optional`, `:excluded` | [enums.lisp#L39](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L39-L43) |
-| [`algorithm-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L45-L60) | `:MD5`, `:SHA-1`, `:SHA-256`, `:SHA-384`, `:SHA-512`, `:SHA3-256`, `:SHA3-384`, `:SHA3-512`, `:BLAKE2b-256`, `:BLAKE2b-384`, `:BLAKE2b-512`, `:BLAKE3`, `:Streebog-256`, `:Streebog-512` | [enums.lisp#L45](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L45-L60) |
-| [`acknowledgement-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L62-L65) | `:declared`, `:concluded` | [enums.lisp#L62](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L62-L65) |
-| [`encoding-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L67-L69) | `:base64` | [enums.lisp#L67](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L67-L69) |
-| [`license-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L71-L88) | Commercial license types: `:academic`, `:appliance`, `:client-access`, `:concurrent-user`, `:core-points`, `:custom-metric`, `:device`, `:evaluation`, `:named-user`, `:node-locked`, `:oem`, `:perpetual`, `:processor-points`, `:subscription`, `:user`, `:other` | [enums.lisp#L71](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L71-L88) |
-| [`licence-id-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L90-L917) | Complete standard SPDX license identifiers (700+ entries, e.g. `:MIT`, `:Apache-2.0`, `:GPL-3.0-only`, `:BSD-3-Clause`) | [enums.lisp#L90](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L90-L917) |
-| [`external-reference-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L919-L967) | `:vcs`, `:issue-tracker`, `:website`, `:advisories`, `:bom`, `:mailing-list`, `:social`, `:chat`, `:documentation`, `:support`, `:source-distribution`, `:distribution`, `:distribution-intake`, `:license`, `:build-meta`, `:build-system`, `:release-notes`, `:security-contact`, `:model-card`, `:log`, `:configuration`, `:evidence`, `:formulation`, `:attestation`, `:threat-model`, `:adversary-model`, `:risk-assessment`, `:vulnerability-assertion`, `:exploitability-statement`, `:pentest-report`, `:static-analysis-report`, `:dynamic-analysis-report`, `:runtime-analysis-report`, `:component-analysis-report`, `:maturity-report`, `:certification-report`, `:codified-infrastructure`, `:quality-metrics`, `:poam`, `:electronic-signature`, `:digital-signature`, `:rfc-9116`, `:patent`, `:patent-family`, `:patent-assertion`, `:citation`, `:other` | [enums.lisp#L919](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L919-L967) |
-| [`severity-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L969-L977) | `:critical`, `:high`, `:medium`, `:low`, `:info`, `:none`, `:unknown` | [enums.lisp#L969](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L969-L977) |
-| [`score-method-type`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L979-L987) | `:CVSSv2`, `:CVSSv3`, `:CVSSv31`, `:CVSSv4`, `:OWASP`, `:SSVC`, `:other` | [enums.lisp#L979](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L979-L987) |
-| [`impact-analysis-state`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L989-L996) | `:resolved`, `:resolved_with_pedigree`, `:exploitable`, `:in_triage`, `:false_positive`, `:not_affected` | [enums.lisp#L989](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L989-L996) |
-| [`impact-analysis-justification`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L998-L1008)| `:code_not_present`, `:code_not_reachable`, `:requires_configuration`, `:requires_dependency`, `:requires_environment`, `:protected_by_compiler`, `:protected_at_runtime`, `:protected_at_perimeter`, `:protected_by_mitigating_control` | [enums.lisp#L998](file:///Users/nmunro/Dev/common-lisp/cl-sbom/src/cyclonedx-1.7/enums.lisp#L998-L1008) |
+| [`bom-format-type`](src/cyclonedx-1.7/enums.lisp#L19-L21) | `:CycloneDX` | [enums.lisp#L19](src/cyclonedx-1.7/enums.lisp#L19-L21) |
+| [`component-type`](src/cyclonedx-1.7/enums.lisp#L23-L37) | `:application`, `:framework`, `:library`, `:container`, `:platform`, `:operating-system`, `:device`, `:device-driver`, `:firmware`, `:file`, `:machine-learning-model`, `:data`, `:cryptographic-asset` | [enums.lisp#L23](src/cyclonedx-1.7/enums.lisp#L23-L37) |
+| [`scope-type`](src/cyclonedx-1.7/enums.lisp#L39-L43) | `:required`, `:optional`, `:excluded` | [enums.lisp#L39](src/cyclonedx-1.7/enums.lisp#L39-L43) |
+| [`algorithm-type`](src/cyclonedx-1.7/enums.lisp#L45-L60) | `:MD5`, `:SHA-1`, `:SHA-256`, `:SHA-384`, `:SHA-512`, `:SHA3-256`, `:SHA3-384`, `:SHA3-512`, `:BLAKE2b-256`, `:BLAKE2b-384`, `:BLAKE2b-512`, `:BLAKE3`, `:Streebog-256`, `:Streebog-512` | [enums.lisp#L45](src/cyclonedx-1.7/enums.lisp#L45-L60) |
+| [`acknowledgement-type`](src/cyclonedx-1.7/enums.lisp#L62-L65) | `:declared`, `:concluded` | [enums.lisp#L62](src/cyclonedx-1.7/enums.lisp#L62-L65) |
+| [`encoding-type`](src/cyclonedx-1.7/enums.lisp#L67-L69) | `:base64` | [enums.lisp#L67](src/cyclonedx-1.7/enums.lisp#L67-L69) |
+| [`license-type`](src/cyclonedx-1.7/enums.lisp#L71-L88) | Commercial license types: `:academic`, `:appliance`, `:client-access`, `:concurrent-user`, `:core-points`, `:custom-metric`, `:device`, `:evaluation`, `:named-user`, `:node-locked`, `:oem`, `:perpetual`, `:processor-points`, `:subscription`, `:user`, `:other` | [enums.lisp#L71](src/cyclonedx-1.7/enums.lisp#L71-L88) |
+| [`licence-id-type`](src/cyclonedx-1.7/enums.lisp#L90-L917) | Complete standard SPDX license identifiers (700+ entries, e.g. `:MIT`, `:Apache-2.0`, `:GPL-3.0-only`, `:BSD-3-Clause`) | [enums.lisp#L90](src/cyclonedx-1.7/enums.lisp#L90-L917) |
+| [`external-reference-type`](src/cyclonedx-1.7/enums.lisp#L919-L967) | `:vcs`, `:issue-tracker`, `:website`, `:advisories`, `:bom`, `:mailing-list`, `:social`, `:chat`, `:documentation`, `:support`, `:source-distribution`, `:distribution`, `:distribution-intake`, `:license`, `:build-meta`, `:build-system`, `:release-notes`, `:security-contact`, `:model-card`, `:log`, `:configuration`, `:evidence`, `:formulation`, `:attestation`, `:threat-model`, `:adversary-model`, `:risk-assessment`, `:vulnerability-assertion`, `:exploitability-statement`, `:pentest-report`, `:static-analysis-report`, `:dynamic-analysis-report`, `:runtime-analysis-report`, `:component-analysis-report`, `:maturity-report`, `:certification-report`, `:codified-infrastructure`, `:quality-metrics`, `:poam`, `:electronic-signature`, `:digital-signature`, `:rfc-9116`, `:patent`, `:patent-family`, `:patent-assertion`, `:citation`, `:other` | [enums.lisp#L919](src/cyclonedx-1.7/enums.lisp#L919-L967) |
+| [`severity-type`](src/cyclonedx-1.7/enums.lisp#L969-L977) | `:critical`, `:high`, `:medium`, `:low`, `:info`, `:none`, `:unknown` | [enums.lisp#L969](src/cyclonedx-1.7/enums.lisp#L969-L977) |
+| [`score-method-type`](src/cyclonedx-1.7/enums.lisp#L979-L987) | `:CVSSv2`, `:CVSSv3`, `:CVSSv31`, `:CVSSv4`, `:OWASP`, `:SSVC`, `:other` | [enums.lisp#L979](src/cyclonedx-1.7/enums.lisp#L979-L987) |
+| [`impact-analysis-state`](src/cyclonedx-1.7/enums.lisp#L989-L996) | `:resolved`, `:resolved_with_pedigree`, `:exploitable`, `:in_triage`, `:false_positive`, `:not_affected` | [enums.lisp#L989](src/cyclonedx-1.7/enums.lisp#L989-L996) |
+| [`impact-analysis-justification`](src/cyclonedx-1.7/enums.lisp#L998-L1008)| `:code_not_present`, `:code_not_reachable`, `:requires_configuration`, `:requires_dependency`, `:requires_environment`, `:protected_by_compiler`, `:protected_at_runtime`, `:protected_at_perimeter`, `:protected_by_mitigating_control` | [enums.lisp#L998](src/cyclonedx-1.7/enums.lisp#L998-L1008) |
 
 ---
 
@@ -590,14 +608,28 @@ Use `find-component` to search across all components in the document (including 
 ### Traversing the Dependency Graph
 
 ```lisp
-(defun get-direct-dependencies (sbom target-ref)
-  "Find all components that TARGET-REF directly depends on."
-  (let ((dep-entry (find target-ref (cl-sbom:dependencies sbom)
-                         :key #'cl-sbom:ref
-                         :test #'string=)))
-    (if dep-entry
-        (cl-sbom:depends-on dep-entry)
-        #())))
+;; 1. Direct dependencies:
+(let* ((comp (cl-sbom:find-component sbom "pkg:apk/wolfi/wolfi-base" :test #'search))
+       (direct-deps (cl-sbom:dependencies-of sbom comp)))
+  (format t "~A directly depends on ~D components:~%" (cl-sbom:name comp) (length direct-deps))
+  (dolist (dep direct-deps)
+    (format t "  - ~A@~A (~A)~%" (cl-sbom:name dep) (cl-sbom:version dep) (cl-sbom:component-type dep))))
+
+;; 2. Transitive dependencies (all downstream dependencies across all layers):
+(let* ((comp (cl-sbom:find-component sbom "pkg:apk/wolfi/wolfi-base" :test #'search))
+       (trans-deps (cl-sbom:dependencies-of sbom comp :transitive t)))
+  (format t "~A transitively depends on ~D components across all layers.~%"
+          (cl-sbom:name comp)
+          (length trans-deps)))
+
+;; 3. Blast radius analysis (what components depend on zlib?):
+(let* ((comp (cl-sbom:find-component sbom "pkg:apk/wolfi/zlib" :test #'search))
+       (blast-radius (cl-sbom:dependents-of sbom comp :transitive t)))
+  (format t "Blast radius for ~A: ~D components will be impacted:~%"
+          (cl-sbom:name comp)
+          (length blast-radius))
+  (dolist (parent blast-radius)
+    (format t "  - ~A@~A (~A)~%" (cl-sbom:name parent) (cl-sbom:version parent) (cl-sbom:component-type parent))))
 ```
 
 ### Auditing Vulnerabilities & CVSS Ratings
@@ -644,11 +676,11 @@ Use `find-component` to search across all components in the document (including 
 
 ## Testing & Development
 
-Tests are implemented using [Rove](https://github.com/fukamachi/rove) in [tests/main.lisp](file:///Users/nmunro/Dev/common-lisp/cl-sbom/tests/main.lisp).
+Tests are implemented using [Rove](https://github.com/fukamachi/rove) in [tests/main.lisp](tests/main.lisp).
 
 ### Running Tests
 
-Using the [`justfile`](file:///Users/nmunro/Dev/common-lisp/cl-sbom/justfile):
+Using the [`justfile`](justfile):
 ```sh
 just test
 ```
