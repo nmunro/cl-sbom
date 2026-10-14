@@ -1711,9 +1711,44 @@
       (ok (signals (cl-sbom:parse sbom-path :format :spdx) 'cl-sbom:unsupported-bom-format))
       (ok (signals (cl-sbom:parse sbom-path :format :spdx-2.3) 'cl-sbom:unsupported-bom-format))
       (ok (signals (cl-sbom:parse sbom-path :format :unknown) 'cl-sbom:sbom-error))
+      (ok (signals (cl-sbom:parse 12345) 'cl-sbom:sbom-error))
       (handler-case (cl-sbom:parse sbom-path :format :spdx)
         (cl-sbom:unsupported-bom-format (c)
-          (ok (eq (cl-sbom:bom-format c) :spdx)))))))
+          (ok (eq (cl-sbom:bom-format c) :spdx))))))
+
+  (testing "parsing sbom from polymorphic input sources"
+    (let ((sbom-path (asdf:system-relative-pathname :cl-sbom "sbom.json")))
+      ;; String namestring path
+      (let ((parsed (cl-sbom:parse (namestring sbom-path))))
+        (ok (typep parsed 'cl-sbom:sbom))
+        (ok (= (length (cl-sbom:components parsed)) 4445)))
+
+      ;; Raw JSON string
+      (let* ((json-text (uiop:read-file-string sbom-path))
+             (parsed (cl-sbom:parse json-text)))
+        (ok (typep parsed 'cl-sbom:sbom))
+        (ok (= (length (cl-sbom:components parsed)) 4445)))
+
+      ;; Open stream
+      (with-open-file (s sbom-path)
+        (let ((parsed (cl-sbom:parse s)))
+          (ok (typep parsed 'cl-sbom:sbom))
+          (ok (= (length (cl-sbom:components parsed)) 4445))))
+
+      ;; Pre-parsed hash table (e.g. from jzon:parse)
+      (let* ((table (com.inuoe.jzon:parse sbom-path))
+             (parsed (cl-sbom:parse table)))
+        (ok (typep parsed 'cl-sbom:sbom))
+        (ok (= (length (cl-sbom:components parsed)) 4445)))
+
+      ;; Octet vector (unsigned-byte 8)
+      (let* ((octets (with-open-file (in sbom-path :element-type '(unsigned-byte 8))
+                       (let ((seq (make-array (file-length in) :element-type '(unsigned-byte 8))))
+                         (read-sequence seq in)
+                         seq)))
+             (parsed (cl-sbom:parse octets)))
+        (ok (typep parsed 'cl-sbom:sbom))
+        (ok (= (length (cl-sbom:components parsed)) 4445))))))
 
 (deftest test-find-component
   (testing "finding components in sbom by bom-ref, name, and purl"

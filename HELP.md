@@ -194,15 +194,16 @@ Because `cl-sbom` avoids name conflicts with `COMMON-LISP`, downstream packages 
 
 ### Functions
 
-#### `(parse path &key (format :cyclonedx-1.7))`
-* **File:** [src/main.lisp](src/main.lisp#L182-L194)
+#### `(parse input &key (format :cyclonedx-1.7))`
+* **File:** [src/main.lisp](src/main.lisp#L187-L216)
 * **Arguments:**
-  - `path`: Pathname designator (string or pathname) or an open input stream containing the SBOM JSON.
+  - `input`: Pathname designator (pathname or file path string), raw JSON string, open input stream, octet vector (`(vector (unsigned-byte 8))`), or pre-parsed JSON `hash-table` containing the SBOM document.
   - `:format`: Format keyword designator (defaults to `:cyclonedx-1.7`). Supported values: `:cyclonedx-1.7`, `:cyclonedx`.
 * **Returns:** An instance of [`sbom`](src/cyclonedx-1.7/main.lisp#L388-L399).
 * **Signals:**
   - [`unsupported-bom-format`](src/cyclonedx-1.7/main.lisp#L186-L191) if `:format` is not `:cyclonedx-1.7`/`:cyclonedx`, or if the document's `"bomFormat"` is not `"CycloneDX"`.
   - [`unsupported-spec-version`](src/cyclonedx-1.7/main.lisp#L193-L198) if the document's `"specVersion"` is not `"1.7"`.
+  - [`sbom-error`](src/cyclonedx-1.7/main.lisp#L187-L189) if `input` is not one of the supported input types.
 
 #### `(find-component sbom target &key (key #'bom-ref) (test #'string=))`
 * **File:** [src/cyclonedx-1.7/main.lisp](src/cyclonedx-1.7/main.lisp#L547-L568)

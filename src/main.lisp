@@ -182,17 +182,35 @@
 
 (in-package :cl-sbom)
 
-(defun parse (path &key (format :cyclonedx-1.7))
-  "Parse an SBOM file, pathname, string, or open stream according to FORMAT (defaults to :CYCLONEDX-1.7)."
+(defun %json-string-p (string)
+  (let ((trimmed (string-trim #(#\Space #\Tab #\Newline #\Return) string)))
+    (and (plusp (length trimmed))
+         (member (char trimmed 0) '(#\{ #\[)))))
+
+(defun parse (input &key (format :cyclonedx-1.7))
+  "Parse an SBOM from a pathname, file path, raw JSON string, open stream, octet vector, or parsed JSON hash table according to FORMAT (defaults to :CYCLONEDX-1.7)."
   (let ((fmt-kw (if (symbolp format)
                     format
                     (alexandria:make-keyword (string-upcase format)))))
     (case fmt-kw
       ((:cyclonedx-1.7 :cyclonedx)
-       (let ((data (if (streamp path)
-                       (com.inuoe.jzon:parse path)
-                       (com.inuoe.jzon:parse (uiop:read-file-string path)))))
+       (let ((data (cond
+                     ((hash-table-p input)
+                      input)
+                     ((streamp input)
+                      (com.inuoe.jzon:parse input))
+                     ((pathnamep input)
+                      (com.inuoe.jzon:parse input))
+                     ((stringp input)
+                      (if (%json-string-p input)
+                          (com.inuoe.jzon:parse input)
+                          (com.inuoe.jzon:parse (uiop:parse-native-namestring input))))
+                     ((typep input '(vector (unsigned-byte 8)))
+                      (com.inuoe.jzon:parse input))
+                     (t
+                      (error 'sbom-error)))))
          (build-sbom data)))
 
       (otherwise
        (error 'unsupported-bom-format :format format)))))
+
